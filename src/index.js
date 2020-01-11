@@ -14,16 +14,17 @@ dotenv.config();
 
 const app = express();
 
-const { APP_PORT } = process.env;
-const PORT = APP_PORT || 8000;
+const PORT = process.env.PORT || 5000;
+
 const MONGO_URI =
   process.env.NODE_ENV === "production"
-    ? process.env.STAGING_MONGO_URI
+    ? process.env.MONGO_URI
     : process.env.LOCAL_MONGO_URI;
+
 mongoose
   .connect(`${MONGO_URI}`, { useNewUrlParser: true })
-  .then(() => console.log("mongodb connected to", MONGO_URI))
-  .catch(() => console.log(`unable to connect to ${MONGO_URI}`));
+  .then(() => console.log("mongodb connected"))
+  .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
