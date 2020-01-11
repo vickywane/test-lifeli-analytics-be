@@ -1,15 +1,18 @@
 {
-  "name": "backend",
+  "name": "lifechitect-backend-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "Lifechitect API Backend",
   "main": "index.js",
+  "engines": {
+    "node": "12.13.0"
+  },
   "scripts": {
     "start": "NODE_ENV=production node -r esm .",
     "dev": "NODE_ENV=development nodemon -r esm",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "George Alonge",
   "license": "ISC",
   "dependencies": {
     "@sendgrid/mail": "^6.4.0",
