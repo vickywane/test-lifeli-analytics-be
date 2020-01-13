@@ -97,8 +97,8 @@ var welData = async data => {
     name: "Wellness",
     cHours: moment.duration(cHours).asHours(),
     eHours,
-    color: "#F74F5A",
-    icon: "work"
+    color: "#F3A636",
+    icon: "wellness"
   };
 
   // console.log(fitness);
@@ -129,7 +129,7 @@ var unpData = async data => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#DADADA",
-    icon: "work"
+    icon: "unpaid"
   };
 
   // console.log(travel);
@@ -150,8 +150,8 @@ var sleData = async data => {
     name: "Sleep",
     cHours: moment.duration(cHours).asHours(),
     eHours,
-    color: "#DADADA",
-    icon: "work"
+    color: "#36C0F9",
+    icon: "sleep"
   };
 };
 
@@ -170,8 +170,8 @@ var selData = async data => {
     name: "Self Care",
     cHours: moment.duration(cHours).asHours(),
     eHours,
-    color: "#DADADA",
-    icon: "work"
+    color: "#81D134",
+    icon: "self-care"
   };
 };
 
@@ -190,8 +190,8 @@ var relData = async data => {
     name: "Relationship",
     cHours: moment.duration(cHours).asHours(),
     eHours,
-    color: "#F3A636",
-    icon: "work"
+    color: "#27B072",
+    icon: "relationship"
   };
 };
 
