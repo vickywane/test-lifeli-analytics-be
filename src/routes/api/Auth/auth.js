@@ -134,7 +134,7 @@ router.post("/social-login", async (req, res) => {
 router.post("/refresh-token", (req, res) => {
   Authentication.clientCredentialsGrant(
     {
-      audience: "https://lifechitet.auth0.com/api/v2/",
+      audience: "https://lifechitect.auth0.com/api/v2/",
       scope: "read:users update:users"
     },
     function(err, response) {
