@@ -170,7 +170,10 @@ router.post("/verify-email", (req, res) => {
         }
       })
       .catch(err => {
-        res.status(406).send({ status: "error", message: err, err: err });
+        res
+          .status(406)
+          .send({ status: "error", message: "server error", err: err });
+        console.log("error", err);
         // console.log(AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET);
         // Handle error.
       });
