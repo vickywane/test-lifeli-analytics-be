@@ -132,6 +132,7 @@ router.post("/social-login", async (req, res) => {
 });
 
 router.post("/refresh-token", (req, res) => {
+  
   Authentication.clientCredentialsGrant(
     {
       audience: "https://rewdt.auth0.com/api/v2/",
@@ -155,7 +156,7 @@ router.post("/verify-email", (req, res) => {
   if (!isValid) {
     return res
       .status(400)
-      .send({ status: "error", message: "email is invalid" });
+      .send({ status: "error", message: "Email is invalid" });
   } else {
     Management.getUsersByEmail(email)
       .then(function(users) {
@@ -172,7 +173,7 @@ router.post("/verify-email", (req, res) => {
       .catch(err => {
         res
           .status(406)
-          .send({ status: "error", message: "Server error", err: err });
+          .send({ status: "error", message: err, err: err });
         // console.log(AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET);
         // Handle error.
       });
