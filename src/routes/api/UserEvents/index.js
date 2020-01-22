@@ -57,15 +57,27 @@ router.post("/add-event", async (req, res) => {
     event_category_code,
     last_updated_on: new Date()
   };
-  try {
-    await userEvents.create(data, (err, data) => {
-      if (err) res.status(400).json({ status: "error", message: err.message });
-      else {
-        res.send({ status: "success", message: "details added successfully" });
-      }
+  // console.log(new Date(start_time).getTime(), end_time);
+  if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
+    try {
+      await userEvents.create(data, (err, data) => {
+        if (err)
+          res.status(400).json({ status: "error", message: err.message });
+        else {
+          res.send({
+            status: "success",
+            message: "details added successfully"
+          });
+        }
+      });
+    } catch (error) {
+      res.status(400).json({ status: "error", message: "Invalid details" });
+    }
+  } else {
+    return res.status(404).send({
+      status: "error",
+      message: "End date cannot be occur before the start date"
     });
-  } catch (error) {
-    res.status(400).json({ status: "error", message: "Invalid details" });
   }
 });
 
@@ -163,16 +175,23 @@ router.post("/edit-event", async (req, res) => {
     event_category_code,
     last_updated_on: new Date()
   };
-  userEvents.findByIdAndUpdate({ _id: event_id }, data, (err, details) => {
-    if (err) {
-      return res.status(400).json({ status: "error", message: err.message });
-    } else {
-      return res.send({
-        status: "success",
-        message: "Event updated successfully"
-      });
-    }
-  });
+  if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
+    userEvents.findByIdAndUpdate({ _id: event_id }, data, (err, details) => {
+      if (err) {
+        return res.status(400).json({ status: "error", message: err.message });
+      } else {
+        return res.send({
+          status: "success",
+          message: "Event updated successfully"
+        });
+      }
+    });
+  } else {
+    return res.status(404).send({
+      status: "error",
+      message: "End date cannot be occur before the start date"
+    });
+  }
 });
 
 router.post("/search-events", (req, res) => {
