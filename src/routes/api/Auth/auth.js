@@ -165,7 +165,7 @@ router.post("/verify-email", (req, res) => {
         } else {
           return res.send({
             status: "error",
-            message: "This user already exists"
+            message: "A user already exist with the provided credentials."
           });
         }
       })
