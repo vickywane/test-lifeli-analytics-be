@@ -54,7 +54,7 @@ router.post("/add-event-category", async (req, res) => {
  */
 router.get("/fetch-event-categories", async (req, res) => {
   const Events = await EventCategories.find();
-  console.log("Events", Events);
+  // console.log("Events", Events);
   try {
     res.send(Events);
   } catch (err) {
