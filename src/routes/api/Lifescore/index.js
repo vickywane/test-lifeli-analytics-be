@@ -330,18 +330,31 @@ router.post("/get-weekly-lifescore", async (req, res) => {
                   weekInterval,
                   lifescore: lifescoreValue
                 };
-
-                await lifescoreModel.create(parsedData, (err, doc) => {
-                  if (err) {
-                    return res.status(400).json({ message: err });
+                const totalcHours =
+                  prodValue.cHours +
+                  welValue.cHours +
+                  sleValue.cHours +
+                  selValue.cHours +
+                  relValue.cHours +
+                  unpValue.cHours;
+                const rndedTHours = Math.round(totalcHours);
+                if (rndedTHours < 168) {
+                  return res.send({
+                    status: "warning",
+                    cHours: totalcHours,
+                    message: `You have completed ${rndedTHours} hours. Please complete ${168 -
+                      rndedTHours} hours of tracked activities weekly to get your lifescore`
+                  });
+                } else {
+                  if (rndedTHours >= 168) {
+                    await lifescoreModel.create(parsedData, (err, doc) => {
+                      if (err) {
+                        return res.status(400).json({ message: err });
+                      }
+                      return res.send({ status: "success", data: doc });
+                    });
                   }
-                  return res.send({ status: "success", data: doc });
-                });
-                // res.send({
-                //   status: "success",
-                //   data: [prodValue, welValue, sleValue, selValue, relValue, unpValue],
-                //   lifescore: lifescoreValue
-                // });
+                }
               }
             }
           );
