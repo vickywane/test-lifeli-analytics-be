@@ -9,6 +9,7 @@ import profile from "./routes/api/Auth/profile";
 import userevents from "./routes/api/UserEvents";
 import tracking from "./routes/api/Tracking";
 import lifescore from "./routes/api/Lifescore";
+import feedback from "./routes/api/Feedback";
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.use("/api/v1/settings", setUser);
 app.use("/api/v1/profile", profile);
 app.use("/api/v1/tracking", tracking);
 app.use("/api/v1/lifescore", lifescore);
+app.use("/api/v1/feedback", feedback);
 app.use("/api/v1", fetchPoints);
 app.use("/api/v1", userevents);
 
