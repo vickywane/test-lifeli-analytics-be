@@ -20,7 +20,7 @@ export const createEventReminder = async () => {
       messages.push({
         to: person.push_token,
         sound: "default",
-        body: "Please remember to update your events",
+        body: "Have you tracked your activities for today? ",
         data: { withSome: "data" },
         channelId: "event-creation-reminder"
       });

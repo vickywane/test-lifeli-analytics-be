@@ -13,13 +13,13 @@ router.post("/add-feedback", async (req, res) => {
       return res.status(400).send({ status: "error", message: err.message });
     }
     sendMail({
-      receiver: "george@liferithms.com",
+      receiver: "feedback@lifechitect.app",
       template: "d-c48ec0e4df364b8ca8942adb3c1ca3e1",
       dynamic_template_data: { description: description }
     });
     return res.send({
       status: "success",
-      message: "Thanks. Your feedback has been noted"
+      message: "Thanks. Your feedback has been received."
     });
   });
 });
