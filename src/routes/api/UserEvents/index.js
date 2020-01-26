@@ -95,9 +95,11 @@ router.post("/fetch-user-events", (req, res) => {
     { sort: { "time_schedule.start_time": -1 } },
     (err, details) => {
       if (err) {
-        res
-          .status(404)
-          .json({ status: "error", message: "Check parameters and try again" });
+        res.status(404).json({
+          status: "error",
+          message:
+            "We couldn't fetch all of your events. But don't worry, we will try again :)"
+        });
       } else {
         res.send({ status: "success", data: details });
       }
@@ -117,7 +119,7 @@ router.delete("/delete-user-event", (req, res) => {
     if (err) {
       return res.send({ status: "error", message: err.message });
     } else {
-      res.send({ status: "success", message: "Event Deleted" });
+      res.send({ status: "success", message: "Event Removed" });
     }
   });
 });
