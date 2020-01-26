@@ -4,6 +4,9 @@ const { Schema, model } = mongoose;
 
 const userSchema = new Schema({
   uuid: String,
+  push_token: {
+    type: String
+  },
   activity_settings: {
     work: {
       start_time: String,

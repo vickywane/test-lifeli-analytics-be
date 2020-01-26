@@ -10,6 +10,8 @@ import userevents from "./routes/api/UserEvents";
 import tracking from "./routes/api/Tracking";
 import lifescore from "./routes/api/Lifescore";
 import feedback from "./routes/api/Feedback";
+import notifications from "./routes/api/Notifications";
+import { createEventReminder } from "./modules/PushNotifications";
 
 dotenv.config();
 
@@ -23,7 +25,11 @@ const MONGO_URI =
     : process.env.LOCAL_MONGO_URI;
 
 mongoose
-  .connect(`${MONGO_URI}`, { useNewUrlParser: true })
+  .connect(`${MONGO_URI}`, {
+    useNewUrlParser: true,
+    useFindAndModify: false,
+    useUnifiedTopology: true
+  })
   .then(() => console.log("mongodb connected"))
   .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
 
@@ -39,11 +45,16 @@ app.use("/api/v1/profile", profile);
 app.use("/api/v1/tracking", tracking);
 app.use("/api/v1/lifescore", lifescore);
 app.use("/api/v1/feedback", feedback);
+app.use("/api/v1/notifications", notifications);
 app.use("/api/v1", fetchPoints);
 app.use("/api/v1", userevents);
 
 app.use((req, res) => {
   res.send({ status: "error", message: "Page not found" });
 });
+
+// setInterval(() => {
+//   createEventReminder();
+// }, 60000);
 
 app.listen(PORT, () => console.log(`🔥  server running on port ${PORT}`));
