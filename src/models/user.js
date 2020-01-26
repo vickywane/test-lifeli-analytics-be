@@ -4,6 +4,9 @@ const { Schema, model } = mongoose;
 
 const userSchema = new Schema({
   uuid: String,
+  push_token: {
+    type: String
+  },
   activity_settings: {
     work: {
       start_time: String,
@@ -15,6 +18,10 @@ const userSchema = new Schema({
     }
   },
   notification_settings: {
+    general_alerts: {
+      type: Boolean,
+      default: true
+    },
     activity_alerts: {
       type: Boolean,
       default: true
