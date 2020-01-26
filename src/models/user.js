@@ -18,6 +18,10 @@ const userSchema = new Schema({
     }
   },
   notification_settings: {
+    general_alerts: {
+      type: Boolean,
+      default: true
+    },
     activity_alerts: {
       type: Boolean,
       default: true
