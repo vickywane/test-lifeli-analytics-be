@@ -4,6 +4,7 @@ import cloudinary from "cloudinary";
 import { Authentication, Management } from "../../../constants/auth0";
 import { Cloudinary } from "../../../constants/cloudinary";
 import Datauri from "datauri";
+import user from "../../../models/user";
 var storage = multer.memoryStorage();
 var upload = multer({ storage: storage }).single("image");
 
@@ -84,6 +85,19 @@ router.post("/get-user", (req, res) => {
     } else {
       res.send(user);
     }
+  });
+});
+
+router.post("/get-user-info", (req, res) => {
+  const { uuid } = req.body;
+  user.findOne({ uuid }, (err, data) => {
+    if (err || data.length === 0) {
+      return res.status(400).send({
+        status: "error",
+        message: "We are unable to load your settings at this time"
+      });
+    }
+    return res.send({ status: "success", data });
   });
 });
 
