@@ -92,7 +92,7 @@ router.post("/fetch-user-events", (req, res) => {
   userEvents.find(
     { uuid },
     null,
-    { sort: { "time_schedule.start_time": -1 } },
+    { sort: { "time_schedule.start_time": 1 } },
     (err, details) => {
       if (err) {
         res.status(404).json({
