@@ -344,8 +344,11 @@ router.post("/get-weekly-lifescore", async (req, res) => {
                     cHours: totalcHours,
                     message: `You have completed ${moment
                       .duration(totalcHours, "hours")
-                      .format("h:mm")} hours. Please complete ${168 -
-                      rndedTHours} hours of tracked activities weekly to get your lifescore`
+                      .format("h:mm")} hours. Please complete ${moment
+                      .duration(168 - totalcHours, "hours")
+                      .format(
+                        "h:mm"
+                      )} hours of tracked activities weekly to get your lifescore`
                   });
                 } else {
                   if (rndedTHours >= 168) {
