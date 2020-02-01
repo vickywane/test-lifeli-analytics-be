@@ -27,7 +27,7 @@ const getLifescore = (
 const getExpectedHours = async event_category => {
   const eHour = await eventCategories.findOne({ name: event_category });
   // console.log(eHour.expected_hours);
-  return eHour.expected_hours;
+  return eHour ? eHour.expected_hours : undefined;
 };
 
 var proData = async data => {
@@ -36,7 +36,7 @@ var proData = async data => {
     item => item.event_category === "Personal Development"
   );
   var work_business = data.filter(
-    item => item.event_category === "Work and Business"
+    item => item.event_category === "Work & Business"
   );
 
   // console.log(carDev, personalDev, work_business);
@@ -64,7 +64,7 @@ var proData = async data => {
   var eHours =
     (await getExpectedHours("Career Development")) +
     (await getExpectedHours("Personal Development")) +
-    (await getExpectedHours("Work and Business"));
+    (await getExpectedHours("Work & Business"));
   return {
     name: "Productivity",
     cHours: moment.duration(cHours).asHours(),
@@ -156,7 +156,7 @@ var sleData = async data => {
 };
 
 var selData = async data => {
-  var self_care = data.filter(item => item.event_category == "SelfCare");
+  var self_care = data.filter(item => item.event_category == "Self Care");
   var cself_care = self_care.reduce((accumulator, currentValue) => {
     var start_date = moment(currentValue.time_schedule.start_time);
     var end_date = moment(currentValue.time_schedule.end_time);
@@ -164,7 +164,7 @@ var selData = async data => {
   }, 0);
 
   var cHours = cself_care;
-  var eHours = await getExpectedHours("Selfcare");
+  var eHours = await getExpectedHours("Self Care");
 
   return {
     name: "Self Care",
