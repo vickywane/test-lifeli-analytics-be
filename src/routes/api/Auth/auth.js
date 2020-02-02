@@ -87,11 +87,11 @@ router.post("/login", (req, res) => {
     let mailData = {
       receiver: email,
       template: "d-d45f15768daa4aba9aed17f0ae8bcfec",
-      sender: "info@liferithm.com",
+      sender: "info@liferithms.com",
       dynamic_template_data
     };
     if (device) {
-      sendMail(mailData);
+      // sendMail(mailData);
     }
     res.send({ status: "success", message: userData });
   });
