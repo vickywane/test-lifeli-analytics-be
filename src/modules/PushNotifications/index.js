@@ -2,7 +2,7 @@ import { Expo } from "expo-server-sdk";
 import user from "../../models/user";
 let expo = new Expo();
 
-export const createEventReminder = async () => {
+export const createEventReminder = async ({title, body}) => {
   let messages = [];
 
   await user.find({}, (err, doc) => {
@@ -20,7 +20,8 @@ export const createEventReminder = async () => {
       messages.push({
         to: person.push_token,
         sound: "default",
-        body: "Have you tracked your activities for today? ",
+        title,
+        body,
         data: { withSome: "data" },
         channelId: "event-creation-reminder"
       });

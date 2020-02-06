@@ -12,6 +12,7 @@ import lifescore from "./routes/api/Lifescore";
 import feedback from "./routes/api/Feedback";
 import notifications from "./routes/api/Notifications";
 import { createEventReminder } from "./modules/PushNotifications";
+import { sixMorning } from "./schedules";
 
 dotenv.config();
 
@@ -53,9 +54,13 @@ app.use((req, res) => {
   res.send({ status: "error", message: "Page not found" });
 });
 
-const notificationDuration = 1000 * 60 * 60 * 3;
-setInterval(() => {
-  createEventReminder();
-}, notificationDuration);
+// const notificationDuration = 1000 * 60 * 60 * 3;
+// setInterval(() => {
+//   createEventReminder();
+// }, notificationDuration);
+
+// setInterval(() => {
+//   sixMorning();
+// }, 20000);
 
 app.listen(PORT, () => console.log(`🔥  server running on port ${PORT}`));
