@@ -2,7 +2,8 @@ import { Expo } from "expo-server-sdk";
 import user from "../../models/user";
 let expo = new Expo();
 
-export const createEventReminder = async ({title, body}) => {
+export const createEventReminder = async ({ title, body }) => {
+  console.log("about to send message with title ", title);
   let messages = [];
 
   await user.find({}, (err, doc) => {
