@@ -14,7 +14,7 @@ export const nineMorning = async () =>
 
 export const twelveAfternoon = async () =>
   await createEventReminder({
-    title: "🚗 It's almost time for lunch",
+    title: "🥗 It's almost time for lunch",
     body: "Open Lifechitect to track your work hours"
   });
 
