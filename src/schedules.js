@@ -25,13 +25,13 @@ export const threeAfternoon = async () =>
     body: "Open Lifechitect to track your progress"
   });
 
-export const sixAfternoon = async () =>
+export const sixEvening = async () =>
   await createEventReminder({
     title: "🏡 Welcome back home",
     body: "Open Lifechitect to track your commute"
   });
 
-export const nineAfternoon = async () =>
+export const nineEvening = async () =>
   await createEventReminder({
     title: "🛏️ It's almost bedtime",
     body: "Open Lifechitect to track your evening routine"
