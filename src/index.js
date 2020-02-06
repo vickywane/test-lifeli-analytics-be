@@ -53,9 +53,13 @@ app.use((req, res) => {
   res.send({ status: "error", message: "Page not found" });
 });
 
-const notificationDuration = 1000 * 60 * 60 * 3;
-setInterval(() => {
-  createEventReminder();
-}, notificationDuration);
+// const notificationDuration = 1000 * 60 * 60 * 3;
+// setInterval(() => {
+//   createEventReminder();
+// }, notificationDuration);
+
+// setInterval(() => {
+//   sixMorning
+// }, 20000);
 
 app.listen(PORT, () => console.log(`🔥  server running on port ${PORT}`));
