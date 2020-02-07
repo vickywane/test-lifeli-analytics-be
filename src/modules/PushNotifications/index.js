@@ -18,6 +18,9 @@ export const createEventReminder = async ({ title, body }) => {
         );
         continue;
       }
+
+      console.log("push token", person.push_token);
+
       messages.push({
         to: person.push_token,
         sound: "default",
@@ -28,7 +31,7 @@ export const createEventReminder = async ({ title, body }) => {
       });
     }
   });
-  // console.log(messages);
+  console.log("messages ready for sending", messages);
   let chunks = expo.chunkPushNotifications(messages);
   let tickets = [];
   (async () => {
