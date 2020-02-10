@@ -11,7 +11,7 @@ import tracking from "./routes/api/Tracking";
 import lifescore from "./routes/api/Lifescore";
 import feedback from "./routes/api/Feedback";
 import notifications from "./routes/api/Notifications";
-import { createEventReminder } from "./modules/PushNotifications";
+// import { createEventReminder } from "./modules/PushNotifications";
 // import { sixMorning } from "./schedules";
 
 dotenv.config();
