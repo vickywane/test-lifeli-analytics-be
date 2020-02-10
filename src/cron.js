@@ -1,7 +1,28 @@
 import { createEventReminder } from "./modules/PushNotifications";
 // const createEventReminder = require("./modules/PushNotifications");
 import { Expo } from "expo-server-sdk";
+import mongoose from "mongoose";
+// const { Schema, model } = mongoose;
 import user from "./models/user";
+
+// const MONGO_URI =
+//   process.env.NODE_ENV === "production"
+//     ? process.env.MONGO_URI
+//     : process.env.LOCAL_MONGO_URI;
+
+const MONGO_URI =
+  "mongodb+srv://dbAdmin:&D$@Dme3n1@lifechitect-datastore-bmm9e.mongodb.net/lifechitect-stage?retryWrites=true&w=majority";
+
+mongoose
+  .connect(`${MONGO_URI}`, {
+    useNewUrlParser: true,
+    useFindAndModify: false,
+    useUnifiedTopology: true
+  })
+  .then(() => console.log("mongodb connected"))
+  .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
+
+var User = mongoose.model("User"); // load your schema
 
 let expo = new Expo();
 
@@ -10,35 +31,40 @@ export const sixMorning = ({ title, body }) => {
 
   let messages = [];
 
-  user.find({}, (err, doc) => {
-    if (err) {
-      console.log("Error occurred retrieving users");
-      return false;
-    }
-
-    console.log("beginning loop through each users");
-
-    for (let person of doc) {
-      // console.log(person.push_token);
-      if (!Expo.isExpoPushToken(person.push_token)) {
-        console.error(
-          `Push token ${person.push_token} is not a valid Expo push token`
-        );
-        continue;
+  try {
+    User.find({}, (err, doc) => {
+      if (err) {
+        console.log("Error occurred retrieving users");
+        return false;
       }
+      console.log(doc);
 
-      console.log("push token", person.push_token);
+      console.log("beginning loop through each users");
 
-      messages.push({
-        to: person.push_token,
-        sound: "default",
-        title,
-        body,
-        data: { withSome: "data" },
-        channelId: "event-creation-reminder"
-      });
-    }
-  });
+      for (let person of doc) {
+        // console.log(person.push_token);
+        if (!Expo.isExpoPushToken(person.push_token)) {
+          console.error(
+            `Push token ${person.push_token} is not a valid Expo push token`
+          );
+          continue;
+        }
+
+        console.log("push token", person.push_token);
+
+        messages.push({
+          to: person.push_token,
+          sound: "default",
+          title,
+          body,
+          data: { withSome: "data" },
+          channelId: "event-creation-reminder"
+        });
+      }
+    });
+  } catch (err) {
+    console.log("error occured", err);
+  }
 
   console.log("messages ready for sending", messages);
 
