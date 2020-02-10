@@ -10,9 +10,7 @@ const MONGO_URI =
 
 let expo = new Expo();
 
-// const MONGO_URI =
-//   "mongodb+srv://dbAdmin:&D$@Dme3n1@lifechitect-datastore-bmm9e.mongodb.net/lifechitect-stage?retryWrites=true&w=majority";
-
+//create intermitent database connection to pull tokens
 mongoose
   .connect(`${MONGO_URI}`, {
     useNewUrlParser: true,
@@ -22,12 +20,12 @@ mongoose
   .then(() => console.log("mongodb connected"))
   .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
 
-var User = mongoose.model("User"); // load your schema
+//load the User schema
+var User = mongoose.model("User");
 
 export const createEventReminder = async ({ title, body }) => {
   console.log("about to send message with title ", title);
   let messages = [];
-
   await User.find({}, (err, doc) => {
     if (err) {
       return false;
@@ -53,7 +51,7 @@ export const createEventReminder = async ({ title, body }) => {
       });
     }
   });
-  console.log("messages ready for sending", messages);
+
   let chunks = expo.chunkPushNotifications(messages);
   let tickets = [];
   (async () => {
