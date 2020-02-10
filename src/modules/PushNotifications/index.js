@@ -10,9 +10,6 @@ export const createEventReminder = async ({ title, body }) => {
     if (err) {
       return false;
     }
-
-    console.log("beginning loop through each users");
-
     for (let person of doc) {
       // console.log(person.push_token);
       if (!Expo.isExpoPushToken(person.push_token)) {
