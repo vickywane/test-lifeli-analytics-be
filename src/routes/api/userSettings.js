@@ -74,6 +74,25 @@ router.post("/update-user-settings", (req, res) => {
       }
     );
   }
+
+  if (type === "user_timezone") {
+    user.findOneAndUpdate(
+      { uuid },
+      { "notification_settings.user_timezone": value },
+      { new: "" },
+      (err, data) => {
+        // console.log(data);
+        if (err) {
+          return res.send("could not update user timezone");
+        }
+        res.send({
+          status: "success",
+          data: data,
+          message: "user timezone updated successfully"
+        });
+      }
+    );
+  }
 });
 
 export default router;

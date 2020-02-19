@@ -26,6 +26,9 @@ const userSchema = new Schema({
       type: Boolean,
       default: true
     },
+    user_timezone: {
+      type: String
+    },
     email_alerts: {
       type: Boolean,
       default: true
