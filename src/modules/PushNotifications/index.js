@@ -23,15 +23,16 @@ mongoose
 //load the User schema
 var User = mongoose.model("User");
 
-export const createEventReminder = async ({ title, body }) => {
+export const createEventReminder = async ({ title, body, timezone }) => {
   console.log("about to send message with title ", title);
   let messages = [];
+  let timezoned_messages = [];
+
   await User.find({}, (err, doc) => {
     if (err) {
       return false;
     }
     for (let person of doc) {
-      // console.log(person.push_token);
       if (!Expo.isExpoPushToken(person.push_token)) {
         console.error(
           `Push token ${person.push_token} is not a valid Expo push token`
@@ -39,20 +40,38 @@ export const createEventReminder = async ({ title, body }) => {
         continue;
       }
 
-      console.log("push token", person.push_token);
+      //Check if user belongs to requested timezone
+      let user_timezone = person.notification_settings.user_timezone;
 
-      messages.push({
-        to: person.push_token,
-        sound: "default",
-        title,
-        body,
-        data: { withSome: "data" },
-        channelId: "event-creation-reminder"
-      });
+      if (timezone !== "" && user_timezone !== "") {
+        let wild_timezone = user_timezone.split("/")[0];
+        if (timezone == wild_timezone) {
+          timezoned_messages.push({
+            to: person.push_token,
+            sound: "default",
+            title,
+            body,
+            data: { withSome: "data" },
+            channelId: "event-creation-reminder"
+          });
+        }
+      }
+
+      // messages.push({
+      //   to: person.push_token,
+      //   sound: "default",
+      //   title,
+      //   body,
+      //   data: { withSome: "data" },
+      //   channelId: "event-creation-reminder"
+      // });
     }
   });
 
-  let chunks = expo.chunkPushNotifications(messages);
+  // let chunks = expo.chunkPushNotifications(messages);
+
+  let chunks = expo.chunkPushNotifications(timezoned_messages);
+
   let tickets = [];
   (async () => {
     for (let chunk of chunks) {

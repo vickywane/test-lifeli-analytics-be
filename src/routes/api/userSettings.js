@@ -81,7 +81,7 @@ router.post("/update-user-settings", (req, res) => {
       { "notification_settings.user_timezone": value },
       { new: "" },
       (err, data) => {
-        // console.log(data);
+        console.log("server data", data);
         if (err) {
           return res.send("could not update user timezone");
         }
