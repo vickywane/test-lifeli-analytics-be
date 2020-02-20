@@ -55,6 +55,8 @@ export const createEventReminder = async ({ title, body, timezone }) => {
             channelId: "event-creation-reminder"
           });
         }
+      } else {
+        console.log("Error: timezone not set: ", person.push_token);
       }
 
       // messages.push({
@@ -77,7 +79,7 @@ export const createEventReminder = async ({ title, body, timezone }) => {
     for (let chunk of chunks) {
       try {
         let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-        console.log(ticketChunk);
+        console.log("ticketChunk", ticketChunk);
         tickets.push(...ticketChunk);
       } catch (error) {
         console.error(error);
