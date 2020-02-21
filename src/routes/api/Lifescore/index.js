@@ -69,11 +69,13 @@ var proData = async data => {
     (await getExpectedHours("career-development")) +
     (await getExpectedHours("personal-development")) +
     (await getExpectedHours("work-and-business"));
+
+  console.log(" prod. cHours: ", moment.duration(cHours));
   return {
     name: "Productivity",
     cHours: moment.duration(cHours).asHours(),
     eHours,
-    color: "#F74F5A",
+    color: "#17A69D",
     icon: "work"
   };
 };
@@ -95,13 +97,16 @@ var welData = async data => {
 
   var cHours = cSpiritual + cFitness;
 
+  console.log(" well. cHours: ", moment.duration(cHours));
+
   var eHours =
     (await getExpectedHours("spiritual")) + (await getExpectedHours("fitness"));
+
   return {
     name: "Wellness",
     cHours: moment.duration(cHours).asHours(),
     eHours,
-    color: "#F3A636",
+    color: "#455DBE",
     icon: "wellness"
   };
 
@@ -125,6 +130,8 @@ var unpData = async data => {
 
   var cHours = cErrand + cTravel;
 
+  console.log(" unpaid. cHours: ", moment.duration(cHours));
+
   var eHours =
     (await getExpectedHours("errand")) + (await getExpectedHours("travel"));
 
@@ -132,7 +139,7 @@ var unpData = async data => {
     name: "Unpaid",
     cHours: moment.duration(cHours).asHours(),
     eHours,
-    color: "#DADADA",
+    color: "#B89560",
     icon: "unpaid"
   };
 
@@ -148,6 +155,9 @@ var sleData = async data => {
   }, 0);
 
   var cHours = cSleep;
+
+  console.log(" sleep. cHours: ", moment.duration(cHours));
+
   var eHours = await getExpectedHours("sleep");
   // console.log(sleep);
   return {
@@ -168,6 +178,9 @@ var selData = async data => {
   }, 0);
 
   var cHours = cself_care;
+
+  console.log(" self care. cHours: ", moment.duration(cHours));
+
   var eHours = await getExpectedHours("self-care");
 
   return {
@@ -190,6 +203,9 @@ var relData = async data => {
   }, 0);
 
   var cHours = crelationship;
+
+  console.log(" rel. cHours: ", moment.duration(cHours));
+
   var eHours = await getExpectedHours("relationship");
   // console.log(relationship);
   return {
