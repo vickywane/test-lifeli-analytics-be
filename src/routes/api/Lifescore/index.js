@@ -70,7 +70,7 @@ var proData = async data => {
     (await getExpectedHours("personal-development")) +
     (await getExpectedHours("work-and-business"));
 
-  console.log(" prod. cHours: ", moment.duration(cHours));
+  // console.log(" prod. cHours: ", moment.duration(cHours));
   return {
     name: "Productivity",
     cHours: moment.duration(cHours).asHours(),
@@ -97,7 +97,7 @@ var welData = async data => {
 
   var cHours = cSpiritual + cFitness;
 
-  console.log(" well. cHours: ", moment.duration(cHours));
+  // console.log(" well. cHours: ", moment.duration(cHours));
 
   var eHours =
     (await getExpectedHours("spiritual")) + (await getExpectedHours("fitness"));
@@ -106,7 +106,7 @@ var welData = async data => {
     name: "Wellness",
     cHours: moment.duration(cHours).asHours(),
     eHours,
-    color: "#455DBE",
+    color: "#8799F2",
     icon: "wellness"
   };
 
@@ -130,7 +130,7 @@ var unpData = async data => {
 
   var cHours = cErrand + cTravel;
 
-  console.log(" unpaid. cHours: ", moment.duration(cHours));
+  // console.log(" unpaid. cHours: ", moment.duration(cHours));
 
   var eHours =
     (await getExpectedHours("errand")) + (await getExpectedHours("travel"));
@@ -139,7 +139,7 @@ var unpData = async data => {
     name: "Unpaid",
     cHours: moment.duration(cHours).asHours(),
     eHours,
-    color: "#B89560",
+    color: "#C99189",
     icon: "unpaid"
   };
 
@@ -156,7 +156,7 @@ var sleData = async data => {
 
   var cHours = cSleep;
 
-  console.log(" sleep. cHours: ", moment.duration(cHours));
+  // console.log(" sleep. cHours: ", moment.duration(cHours));
 
   var eHours = await getExpectedHours("sleep");
   // console.log(sleep);
@@ -179,7 +179,7 @@ var selData = async data => {
 
   var cHours = cself_care;
 
-  console.log(" self care. cHours: ", moment.duration(cHours));
+  // console.log(" self care. cHours: ", moment.duration(cHours));
 
   var eHours = await getExpectedHours("self-care");
 
@@ -204,7 +204,7 @@ var relData = async data => {
 
   var cHours = crelationship;
 
-  console.log(" rel. cHours: ", moment.duration(cHours));
+  // console.log(" rel. cHours: ", moment.duration(cHours));
 
   var eHours = await getExpectedHours("relationship");
   // console.log(relationship);
