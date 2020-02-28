@@ -5,6 +5,7 @@
 
 import express from "express";
 import userEvents from "../../../models/userEvents";
+import moment from "moment";
 
 const router = express.Router();
 // create a new event
@@ -57,19 +58,107 @@ router.post("/add-event", async (req, res) => {
     event_category_code,
     last_updated_on: new Date()
   };
-  // console.log(new Date(start_time).getTime(), end_time);
+
   if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
     try {
-      await userEvents.create(data, (err, data) => {
-        if (err)
-          res.status(400).json({ status: "error", message: err.message });
-        else {
-          res.send({
-            status: "success",
-            message: "details added successfully"
-          });
-        }
-      });
+      //check if events span multiple days then split into two.
+      if (moment(start_time).isoWeekday() !== moment(end_time).isoWeekday()) {
+        //get end of the first day for end_time of first event
+        const e1 = moment(start_time)
+          .endOf("day")
+          .toISOString();
+
+        //get start of the second day for start time of second event
+        const s1 = moment(end_time)
+          .startOf("day")
+          .toISOString();
+
+        //update end_time for first event
+        const event1 = {
+          uuid,
+          note,
+          time_schedule: {
+            start_time,
+            end_time: e1,
+            hours_spent
+          },
+          alert_time: {
+            text: alert_time_text,
+            val: alert_time_value
+          },
+          repeat_time: {
+            text: repeat_time_text,
+            val: repeat_time_value,
+            reoccur: repeat_time_reoccur
+          },
+          location,
+          lat,
+          lng,
+          activity_category,
+          activity_code,
+          event_category,
+          event_category_code,
+          last_updated_on: new Date()
+        };
+
+        //update start_time for second event
+        const event2 = {
+          uuid,
+          note,
+          time_schedule: {
+            start_time: s1,
+            end_time,
+            hours_spent
+          },
+          alert_time: {
+            text: alert_time_text,
+            val: alert_time_value
+          },
+          repeat_time: {
+            text: repeat_time_text,
+            val: repeat_time_value,
+            reoccur: repeat_time_reoccur
+          },
+          location,
+          lat,
+          lng,
+          activity_category,
+          activity_code,
+          event_category,
+          event_category_code,
+          last_updated_on: new Date()
+        };
+
+        //save first event,
+        await userEvents.create(event1, (err, data) => {
+          if (err)
+            res.status(400).json({ status: "error", message: err.message });
+        });
+
+        //save second event
+        await userEvents.create(event2, (err, data) => {
+          if (err)
+            res.status(400).json({ status: "error", message: err.message });
+          else {
+            res.send({
+              status: "success",
+              message: "details added successfully"
+            });
+          }
+        });
+      } else {
+        //events belong to the same day
+        await userEvents.create(data, (err, data) => {
+          if (err)
+            res.status(400).json({ status: "error", message: err.message });
+          else {
+            res.send({
+              status: "success",
+              message: "details added successfully"
+            });
+          }
+        });
+      }
     } catch (error) {
       res.status(400).json({ status: "error", message: "Invalid details" });
     }
