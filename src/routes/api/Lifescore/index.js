@@ -366,10 +366,12 @@ router.post("/get-weekly-lifescore", async (req, res) => {
                     cHours: totalcHours,
                     message: `You have tracked ${moment
                       .duration(totalcHours, "hours")
-                      .format("h:mm")} hours. Please complete ${moment
+                      .format(
+                        "hh:mm"
+                      )} hours. Please complete ${moment
                       .duration(168 - totalcHours, "hours")
                       .format(
-                        "h:mm"
+                        "hh:mm"
                       )} hours more to get your lifescore for this week.`
                   });
                 } else {
