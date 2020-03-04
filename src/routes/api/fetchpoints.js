@@ -53,7 +53,9 @@ router.post("/add-event-category", async (req, res) => {
  * descritpion: updated api to handle failure case
  */
 router.get("/fetch-event-categories", async (req, res) => {
-  const Events = await EventCategories.find();
+  const Events = await EventCategories.find({}).sort({
+    sort_order: "ascending"
+  });
   // console.log("Events", Events);
   try {
     res.send(Events);
