@@ -43,7 +43,7 @@ export const createEventReminder = async ({ title, body, timezone }) => {
       //Check if user belongs to requested timezone
       let user_timezone = person.notification_settings.user_timezone;
 
-      if (timezone !== "" && user_timezone !== "") {
+      if (timezone !== null && user_timezone !== "") {
         let wild_timezone = user_timezone.split("/")[0];
         if (timezone == wild_timezone) {
           timezoned_messages.push({
@@ -65,6 +65,11 @@ export const createEventReminder = async ({ title, body, timezone }) => {
             data: { withSome: "data" },
             channelId: "event-creation-reminder"
           });
+
+          console.log(
+            "about sending message for push token",
+            person.push_token
+          );
         } else {
           console.log("Error: timezone not set: ", person.push_token);
         }
