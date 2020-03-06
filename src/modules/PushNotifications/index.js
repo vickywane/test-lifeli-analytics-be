@@ -56,7 +56,18 @@ export const createEventReminder = async ({ title, body, timezone }) => {
           });
         }
       } else {
-        console.log("Error: timezone not set: ", person.push_token);
+        if (body === "Open Lifechitect to track your progress") {
+          timezoned_messages.push({
+            to: person.push_token,
+            sound: "default",
+            title,
+            body,
+            data: { withSome: "data" },
+            channelId: "event-creation-reminder"
+          });
+        } else {
+          console.log("Error: timezone not set: ", person.push_token);
+        }
       }
 
       // messages.push({
