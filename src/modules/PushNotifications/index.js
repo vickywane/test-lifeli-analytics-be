@@ -43,46 +43,36 @@ export const createEventReminder = async ({ title, body, timezone }) => {
       //Check if user belongs to requested timezone
       let user_timezone = person.notification_settings.user_timezone;
 
-      if (timezone !== null && user_timezone !== "") {
-        let wild_timezone = user_timezone.split("/")[0];
-        if (timezone == wild_timezone) {
-          timezoned_messages.push({
-            to: person.push_token,
-            sound: "default",
-            title,
-            body,
-            data: { withSome: "data" },
-            channelId: "event-creation-reminder"
-          });
-        }
-      } else {
-        if (body === "Open Lifechitect to track your progress") {
-          timezoned_messages.push({
-            to: person.push_token,
-            sound: "default",
-            title,
-            body,
-            data: { withSome: "data" },
-            channelId: "event-creation-reminder"
-          });
+      //SEND MESSAGE TO ALL USERS IF TIMEZONE IS ALL
+      if (timezone === "ALL") {
+        timezoned_messages.push({
+          to: person.push_token,
+          sound: "default",
+          title,
+          body,
+          data: { withSome: "data" },
+          channelId: "event-creation-reminder"
+        });
 
-          console.log(
-            "about sending message for push token",
-            person.push_token
-          );
+        console.log("about sending message for push token", person.push_token);
+      } else {
+        // check for timezoned messages
+        if (timezone !== "" && user_timezone !== "") {
+          let wild_timezone = user_timezone.split("/")[0];
+          if (timezone == wild_timezone) {
+            timezoned_messages.push({
+              to: person.push_token,
+              sound: "default",
+              title,
+              body,
+              data: { withSome: "data" },
+              channelId: "event-creation-reminder"
+            });
+          }
         } else {
           console.log("Error: timezone not set: ", person.push_token);
         }
       }
-
-      // messages.push({
-      //   to: person.push_token,
-      //   sound: "default",
-      //   title,
-      //   body,
-      //   data: { withSome: "data" },
-      //   channelId: "event-creation-reminder"
-      // });
     }
   });
 
