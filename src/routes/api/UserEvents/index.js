@@ -94,7 +94,7 @@ router.post("/fetch-user-events", (req, res) => {
   const { uuid } = req.body;
   userEvents.find(
     { uuid },
-    null,
+    "-uuid -alert_time -repeat_time -last_updated_on -description -name",
     { sort: { "time_schedule.start_time": 1 } },
     (err, details) => {
       if (err) {
