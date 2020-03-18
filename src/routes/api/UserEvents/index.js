@@ -67,6 +67,7 @@ router.post("/add-event", async (req, res) => {
         else {
           res.send({
             status: "success",
+            data,
             message: "details added successfully"
           });
         }
