@@ -61,13 +61,22 @@ router.post("/add-event", async (req, res) => {
 
   if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
     try {
-      await userEvents.create(data, (err, data) => {
+      await userEvents.create(data, (err, docs) => {
         if (err)
           res.status(400).json({ status: "error", message: err.message });
         else {
+          const {
+            uuid,
+            alert_time,
+            repeat_time,
+            last_updated_on,
+            description,
+            name,
+            ...truncatedData
+          } = docs.toObject();
           res.send({
             status: "success",
-            data,
+            data: truncatedData,
             message: "details added successfully"
           });
         }
