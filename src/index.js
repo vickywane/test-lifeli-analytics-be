@@ -29,7 +29,7 @@ mongoose
   .connect(`${MONGO_URI}`, {
     useNewUrlParser: true,
     useFindAndModify: false,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
   })
   .then(() => console.log("mongodb connected"))
   .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
