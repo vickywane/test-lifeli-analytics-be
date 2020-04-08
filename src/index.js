@@ -11,6 +11,7 @@ import tracking from "./routes/api/Tracking";
 import lifescore from "./routes/api/Lifescore";
 import feedback from "./routes/api/Feedback";
 import notifications from "./routes/api/Notifications";
+import usereventsv2 from "./routes/api/UserEvents/v2";
 // import { createEventReminder } from "./modules/PushNotifications";
 // import { sixMorning } from "./schedules";
 
@@ -49,6 +50,7 @@ app.use("/api/v1/feedback", feedback);
 app.use("/api/v1/notifications", notifications);
 app.use("/api/v1", fetchPoints);
 app.use("/api/v1", userevents);
+app.use("/api/v2", usereventsv2);
 
 app.use((req, res) => {
   res.send({ status: "error", message: "Page not found" });
