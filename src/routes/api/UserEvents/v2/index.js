@@ -80,7 +80,7 @@ router.post("/add-event", async (req, res) => {
             uuid,
             start_time: start_time,
             end_time,
-            event_title: `${activity_category}:${note}`,
+            event_title: `${activity_category}: ${note}`,
             reminder_time,
             alert_time_code,
             event_id: truncatedData._id
@@ -215,7 +215,7 @@ router.post("/edit-event", async (req, res) => {
     uuid,
     start_time: start_time,
     end_time,
-    event_title: `${activity_category}:${note}`,
+    event_title: `${activity_category}: ${note}`,
     reminder_time,
     alert_time_code,
     event_id
