@@ -88,7 +88,7 @@ router.post("/add-event", async (req, res) => {
   } else {
     return res.status(404).send({
       status: "error",
-      message: "Event end date cannot be earlier than the start date",
+      message: "Event end date cannot be earlier than its start date",
     });
   }
 });
