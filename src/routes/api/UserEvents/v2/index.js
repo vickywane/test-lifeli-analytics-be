@@ -148,7 +148,7 @@ router.delete("/delete-user-event", (req, res) => {
     if (err) {
       return res.send({ status: "error", message: err.message });
     } else {
-      eventAlerts.findByIdAndDelete({ event_id: event_id }, (err, details) => {
+      eventAlerts.findOneAndDelete({ event_id: event_id }, (err, details) => {
         return res.send({ status: "success", message: "Event Removed" });
       });
     }
