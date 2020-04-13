@@ -30,7 +30,7 @@ router.post("/add-event", async (req, res) => {
     activity_category,
     activity_code,
     event_category,
-    event_category_code,
+    event_category_code
   } = req.body;
   const data = {
     uuid,
@@ -38,16 +38,16 @@ router.post("/add-event", async (req, res) => {
     time_schedule: {
       start_time,
       end_time,
-      hours_spent,
+      hours_spent
     },
     alert_time: {
       text: alert_time_text,
-      val: alert_time_value,
+      val: alert_time_value
     },
     repeat_time: {
       text: repeat_time_text,
       val: repeat_time_value,
-      reoccur: repeat_time_reoccur,
+      reoccur: repeat_time_reoccur
     },
     location,
     lat,
@@ -56,7 +56,7 @@ router.post("/add-event", async (req, res) => {
     activity_code,
     event_category,
     event_category_code,
-    last_updated_on: new Date(),
+    last_updated_on: new Date()
   };
 
   if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
@@ -77,7 +77,7 @@ router.post("/add-event", async (req, res) => {
           res.send({
             status: "success",
             data: truncatedData,
-            message: "Details added successfully",
+            message: "Details added successfully"
           });
         }
       });
@@ -88,7 +88,7 @@ router.post("/add-event", async (req, res) => {
   } else {
     return res.status(404).send({
       status: "error",
-      message: "Event end date cannot be earlier than its start date",
+      message: "Event end date cannot be earlier than its start date"
     });
   }
 });
@@ -110,7 +110,7 @@ router.post("/fetch-user-events", (req, res) => {
         res.status(404).json({
           status: "error",
           message:
-            "We couldn't fetch all of your events. But don't worry, we will try again :)",
+            "We couldn't fetch all of your events. But don't worry, we will try again :)"
         });
       } else {
         res.send({ status: "success", data: details });
@@ -127,7 +127,7 @@ router.post("/fetch-user-events", (req, res) => {
 
 router.delete("/delete-user-event", (req, res) => {
   const { uuid, event_id } = req.body;
-  userEvents.findByIdAndDelete({ _id: event_id }, (err, details) => {
+  userEvents.findOneAndDelete({ _id: event_id }, (err, details) => {
     if (err) {
       return res.send({ status: "error", message: err.message });
     } else {
@@ -161,7 +161,7 @@ router.post("/edit-event", async (req, res) => {
     activity_category,
     activity_code,
     event_category,
-    event_category_code,
+    event_category_code
   } = req.body;
   const data = {
     uuid,
@@ -169,16 +169,16 @@ router.post("/edit-event", async (req, res) => {
     time_schedule: {
       start_time,
       end_time,
-      hours_spent,
+      hours_spent
     },
     alert_time: {
       text: alert_time_text,
-      val: alert_time_value,
+      val: alert_time_value
     },
     repeat_time: {
       text: repeat_time_text,
       val: repeat_time_value,
-      reoccur: repeat_time_reoccur,
+      reoccur: repeat_time_reoccur
     },
     location,
     lat,
@@ -187,7 +187,7 @@ router.post("/edit-event", async (req, res) => {
     activity_code,
     event_category,
     event_category_code,
-    last_updated_on: new Date(),
+    last_updated_on: new Date()
   };
   if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
     userEvents.findByIdAndUpdate({ _id: event_id }, data, (err, details) => {
@@ -196,14 +196,14 @@ router.post("/edit-event", async (req, res) => {
       } else {
         return res.send({
           status: "success",
-          message: "Event updated successfully",
+          message: "Event updated successfully"
         });
       }
     });
   } else {
     return res.status(404).send({
       status: "error",
-      message: "End date cannot be occur before the start date",
+      message: "End date cannot be occur before the start date"
     });
   }
 });
@@ -213,8 +213,8 @@ router.post("/search-events", (req, res) => {
   var query = {
     $or: [
       { note: { $regex: param, $options: "i" } },
-      { activity_category: { $regex: param, $options: "i" } },
-    ],
+      { activity_category: { $regex: param, $options: "i" } }
+    ]
   };
   userEvents.find(
     { uuid, ...query },
