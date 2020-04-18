@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import cors from "cors";
 import bodyParser from "body-parser";
 import auth from "./routes/api/Auth/auth";
 import setUser from "./routes/api/userSettings";
@@ -12,6 +13,7 @@ import lifescore from "./routes/api/Lifescore";
 import feedback from "./routes/api/Feedback";
 import notifications from "./routes/api/Notifications";
 import usereventsv2 from "./routes/api/UserEvents/v2";
+import webadmin from "./routes/api/web";
 // import { createEventReminder } from "./modules/PushNotifications";
 // import { sixMorning } from "./schedules";
 
@@ -30,10 +32,12 @@ mongoose
   .connect(`${MONGO_URI}`, {
     useNewUrlParser: true,
     useFindAndModify: false,
-    useUnifiedTopology: true,
+    useUnifiedTopology: true
   })
   .then(() => console.log("mongodb connected"))
   .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
+
+app.use(cors());
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -51,6 +55,7 @@ app.use("/api/v1/notifications", notifications);
 app.use("/api/v1", fetchPoints);
 app.use("/api/v1", userevents);
 app.use("/api/v2", usereventsv2);
+app.use("/api/v1/admin", webadmin);
 
 app.use((req, res) => {
   res.send({ status: "error", message: "Page not found" });

@@ -1,0 +1,53 @@
+import express from "express";
+import moment from "moment";
+import userEvents from "../../../models/userEvents";
+import user from "../../../models/user";
+
+const router = express.Router();
+
+// function getUserEvents(uuid) {
+//   const events = userEvents.find({ uuid });
+//   return events;
+// }
+
+router.get("/fetch-all-events", async (req, res) => {
+  await userEvents.find({}, (err, data) => {
+    if (err) {
+      return res.status(400).send({
+        status: "error",
+        message: "An error occurred while attempting to pull events"
+      });
+    }
+    return res.send({ status: "success", data });
+  });
+});
+
+router.get("/fetch-user-activities", async (req, res) => {
+  const [getAllUsers, getUserEvents] = await Promise.all([
+    user.find({}),
+    userEvents.find({})
+  ]);
+  const allusers = [];
+  getAllUsers.forEach(async (user) => {
+    const eventsPerUser = getUserEvents.filter(
+      (event) => event.uuid === user.uuid
+    );
+    const hoursTracked = eventsPerUser.reduce((acc, currentValue) => {
+      const start_time = moment(currentValue.time_schedule.start_time);
+      const end_time = moment(currentValue.time_schedule.end_time);
+
+      return moment.duration(end_time.diff(start_time)).asHours() + acc;
+    }, 0);
+
+    allusers.push({
+      uuid: user.uuid,
+      timezone: user.notification_settings.user_timezone,
+      no_of_events: eventsPerUser.length || 0,
+      hoursTracked
+    });
+  });
+
+  return res.send({ status: "success", data: allusers });
+});
+
+export default router;
