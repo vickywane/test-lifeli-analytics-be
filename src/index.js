@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import cors from "cors";
 import bodyParser from "body-parser";
 import auth from "./routes/api/Auth/auth";
 import setUser from "./routes/api/userSettings";
@@ -35,6 +36,8 @@ mongoose
   })
   .then(() => console.log("mongodb connected"))
   .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
+
+app.use(cors());
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));

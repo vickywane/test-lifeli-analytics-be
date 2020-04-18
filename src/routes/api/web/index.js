@@ -47,7 +47,7 @@ router.get("/fetch-user-activities", async (req, res) => {
     });
   });
 
-  return res.send({ data: allusers });
+  return res.send({ status: "success", data: allusers });
 });
 
 export default router;
