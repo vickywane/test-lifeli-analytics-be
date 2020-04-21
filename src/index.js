@@ -35,7 +35,7 @@ mongoose
     useUnifiedTopology: true
   })
   .then(() => console.log("mongodb connected"))
-  .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
+  .catch(() => console.log(`We are unable to connect to the mongo db ${MONGO_URI}`));
 
 app.use(cors());
 
