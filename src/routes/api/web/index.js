@@ -71,7 +71,7 @@ router.get("/fetch-all-events", async (req, res) => {
 router.get("/fetch-all-users", (req, res) => {
   user
     .find({})
-    .select("uuid notification_settings.user_timezone")
+    .select("uuid join_date notification_settings.user_timezone")
     .exec((err, data) => {
       if (err) {
         return res.status(400).send({
