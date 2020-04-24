@@ -11,19 +11,21 @@ const router = express.Router();
 // }
 
 router.get("/fetch-all-events", async (req, res) => {
+  console.log("Starting fetch events", new Date());
   await userEvents
     .find({})
     .populate({
       path: "_user",
-      select: "uuid notification_settings.user_timezone"
+      select: "uuid notification_settings.user_timezone",
     })
     .exec((err, data) => {
       if (err) {
         return res.status(400).send({
           status: "error",
-          message: "An error occurred while attempting to pull events"
+          message: "An error occurred while attempting to pull events",
         });
       }
+      console.log("Finished fetch events", new Date());
       return res.send({ status: "success", data });
     });
 });
@@ -69,6 +71,7 @@ router.get("/fetch-all-events", async (req, res) => {
 // });
 
 router.get("/fetch-all-users", (req, res) => {
+  console.log("starting fetch users", new Date());
   user
     .find({})
     .select("uuid notification_settings.user_timezone")
@@ -76,9 +79,10 @@ router.get("/fetch-all-users", (req, res) => {
       if (err) {
         return res.status(400).send({
           status: "error",
-          message: "Unable to complete fetching of events"
+          message: "Unable to complete fetching of events",
         });
       }
+      console.log("finished fetch users", new Date());
       return res.send({ status: "success", data });
     });
 });
