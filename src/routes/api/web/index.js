@@ -2,6 +2,7 @@ import express from "express";
 import moment from "moment";
 import userEvents from "../../../models/userEvents";
 import user from "../../../models/user";
+import eventAlerts from "../../../models/eventAlerts";
 
 const router = express.Router();
 
@@ -13,6 +14,7 @@ const router = express.Router();
 router.get("/fetch-all-events", async (req, res) => {
   await userEvents
     .find({})
+    .select("uuid time_schedule")
     .populate({
       path: "_user",
       select: "uuid notification_settings.user_timezone"
@@ -81,6 +83,19 @@ router.get("/fetch-all-users", (req, res) => {
       }
       return res.send({ status: "success", data });
     });
+});
+
+router.get("/fetch-all-reminders", (req, res) => {
+  eventAlerts.find({}).exec((error, data) => {
+    if (error) {
+      res.status(400).send({
+        status: "error",
+        message: "Unable to fetch reeminders at this time"
+      });
+    }
+
+    return res.send({ status: "success", data });
+  });
 });
 
 export default router;
