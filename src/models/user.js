@@ -17,6 +17,7 @@ const userSchema = new Schema({
       end_time: String
     }
   },
+  join_date: { type: Date, default: Date.now },
   notification_settings: {
     general_alerts: {
       type: Boolean,

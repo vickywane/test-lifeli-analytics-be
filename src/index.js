@@ -14,8 +14,6 @@ import feedback from "./routes/api/Feedback";
 import notifications from "./routes/api/Notifications";
 import usereventsv2 from "./routes/api/UserEvents/v2";
 import webadmin from "./routes/api/web";
-// import { createEventReminder } from "./modules/PushNotifications";
-// import { sixMorning } from "./schedules";
 
 dotenv.config();
 
@@ -60,14 +58,5 @@ app.use("/api/v1/admin", webadmin);
 app.use((req, res) => {
   res.send({ status: "error", message: "Page not found" });
 });
-
-// const notificationDuration = 1000 * 60 * 60 * 3;
-// setInterval(() => {
-//   createEventReminder();
-// }, notificationDuration);
-
-// setInterval(() => {
-//   sixMorning();
-// }, 20000);
 
 app.listen(PORT, () => console.log(`🔥  server running on port ${PORT}`));
