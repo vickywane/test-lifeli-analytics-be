@@ -14,7 +14,7 @@ const router = express.Router();
 router.get("/fetch-all-events", async (req, res) => {
   await userEvents
     .find({})
-    .select("uuid time_schedule")
+    .select("uuid time_schedule note event_category created_on")
     .populate({
       path: "_user",
       select: "uuid notification_settings.user_timezone"
