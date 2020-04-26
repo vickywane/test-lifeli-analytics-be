@@ -12,7 +12,6 @@ const router = express.Router();
 // }
 
 router.get("/fetch-all-events", async (req, res) => {
-  console.log("Starting fetch events", new Date());
   await userEvents
     .find({})
     .select("uuid time_schedule")
@@ -27,7 +26,6 @@ router.get("/fetch-all-events", async (req, res) => {
           message: "An error occurred while attempting to pull events",
         });
       }
-      console.log("Finished fetch events", new Date());
       return res.send({ status: "success", data });
     });
 });
@@ -94,7 +92,7 @@ router.get("/fetch-all-reminders", (req, res) => {
     if (error) {
       res.status(400).send({
         status: "error",
-        message: "Unable to fetch reeminders at this time"
+        message: "Unable to fetch reeminders at this time",
       });
     }
 

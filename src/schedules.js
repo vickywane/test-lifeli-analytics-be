@@ -3,6 +3,8 @@ import user from "./models/user";
 import { Management } from "./constants/auth0";
 // const createEventReminder = require("./modules/PushNotifications");
 
+import mongoose from "mongoose";
+
 export const sixMorning = async (timezone) => {
   return await createEventReminder({
     title: "😀 Good Morning! Rise and Shine",
@@ -63,6 +65,25 @@ const handleUserModelUpdate = (id, created_at) => {
 };
 
 export const addJoinDate = () => {
+  //initiate new db connection
+  const MONGO_URI =
+    process.env.NODE_ENV === "production"
+      ? process.env.MONGO_URI
+      : process.env.LOCAL_MONGO_URI;
+
+  //create intermitent database connection
+  mongoose
+    .connect(`${MONGO_URI}`, {
+      useNewUrlParser: true,
+      useFindAndModify: false,
+      useUnifiedTopology: true,
+    })
+    .then(() => console.log("mongodb connected"))
+    .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
+
+  //load the User schema
+  var user = mongoose.model("User");
+
   user.find((err, users) => {
     if (!err) {
       users.forEach((user) =>
@@ -84,10 +105,8 @@ export const addJoinDate = () => {
       );
       // console.log(users);
     } else {
-      console.log(
-        "Sorry an error occured in fetching users. Check connection to db"
-      );
+      console.log("Sorry an error occured in fetching the user.");
     }
   });
-  console.log("join date");
+  console.log("users join date updated");
 };
