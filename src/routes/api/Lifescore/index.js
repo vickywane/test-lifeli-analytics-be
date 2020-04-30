@@ -24,23 +24,23 @@ const getLifescore = (
     100;
   return lifeScore;
 };
-const getExpectedHours = async event_category_code => {
+const getExpectedHours = async (event_category_code) => {
   const eHour = await eventCategories.findOne({
-    category_code: event_category_code
+    category_code: event_category_code,
   });
   const actualEhour = eHour ? eHour.expected_hours : 0;
   return actualEhour;
 };
 
-var proData = async data => {
+var proData = async (data) => {
   var carDev = data.filter(
-    item => item.event_category_code == "career-development"
+    (item) => item.event_category_code == "career-development"
   );
   var personalDev = data.filter(
-    item => item.event_category_code === "personal-development"
+    (item) => item.event_category_code === "personal-development"
   );
   var work_business = data.filter(
-    item => item.event_category_code === "work-and-business"
+    (item) => item.event_category_code === "work-and-business"
   );
 
   // console.log(carDev, personalDev, work_business);
@@ -76,13 +76,15 @@ var proData = async data => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#17A69D",
-    icon: "work"
+    icon: "work",
   };
 };
 
-var welData = async data => {
-  var fitness = data.filter(item => item.event_category_code == "fitness");
-  var spiritual = data.filter(item => item.event_category_code === "spiritual");
+var welData = async (data) => {
+  var fitness = data.filter((item) => item.event_category_code == "fitness");
+  var spiritual = data.filter(
+    (item) => item.event_category_code === "spiritual"
+  );
   var cFitness = fitness.reduce((accumulator, currentValue) => {
     var start_date = moment(currentValue.time_schedule.start_time);
     var end_date = moment(currentValue.time_schedule.end_time);
@@ -107,15 +109,15 @@ var welData = async data => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#8799F2",
-    icon: "wellness"
+    icon: "wellness",
   };
 
   // console.log(fitness);
 };
 
-var unpData = async data => {
-  var errand = data.filter(item => item.event_category_code == "errand");
-  var travel = data.filter(item => item.event_category_code === "travel");
+var unpData = async (data) => {
+  var errand = data.filter((item) => item.event_category_code == "errand");
+  var travel = data.filter((item) => item.event_category_code === "travel");
   var cErrand = errand.reduce((accumulator, currentValue) => {
     var start_date = moment(currentValue.time_schedule.start_time);
     var end_date = moment(currentValue.time_schedule.end_time);
@@ -140,14 +142,14 @@ var unpData = async data => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#C99189",
-    icon: "unpaid"
+    icon: "unpaid",
   };
 
   // console.log(travel);
 };
 
-var sleData = async data => {
-  var sleep = data.filter(item => item.event_category_code == "sleep");
+var sleData = async (data) => {
+  var sleep = data.filter((item) => item.event_category_code == "sleep");
   var cSleep = sleep.reduce((accumulator, currentValue) => {
     var start_date = moment(currentValue.time_schedule.start_time);
     var end_date = moment(currentValue.time_schedule.end_time);
@@ -165,12 +167,14 @@ var sleData = async data => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#36C0F9",
-    icon: "sleep"
+    icon: "sleep",
   };
 };
 
-var selData = async data => {
-  var self_care = data.filter(item => item.event_category_code == "self-care");
+var selData = async (data) => {
+  var self_care = data.filter(
+    (item) => item.event_category_code == "self-care"
+  );
   var cself_care = self_care.reduce((accumulator, currentValue) => {
     var start_date = moment(currentValue.time_schedule.start_time);
     var end_date = moment(currentValue.time_schedule.end_time);
@@ -188,13 +192,13 @@ var selData = async data => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#81D134",
-    icon: "self-care"
+    icon: "self-care",
   };
 };
 
-var relData = async data => {
+var relData = async (data) => {
   var relationship = data.filter(
-    item => item.event_category_code == "relationship"
+    (item) => item.event_category_code == "relationship"
   );
   var crelationship = relationship.reduce((accumulator, currentValue) => {
     var start_date = moment(currentValue.time_schedule.start_time);
@@ -213,7 +217,7 @@ var relData = async data => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#27B072",
-    icon: "relationship"
+    icon: "relationship",
   };
 };
 
@@ -230,7 +234,7 @@ router.post("/get-weekly-lifescore", async (req, res) => {
     {
       uuid,
       "weekInterval.startOfWeek": start_date,
-      "weekInterval.endOfWeek": end_date
+      "weekInterval.endOfWeek": end_date,
     },
     async (err, data) => {
       if (err) {
@@ -242,8 +246,8 @@ router.post("/get-weekly-lifescore", async (req, res) => {
               uuid,
               "time_schedule.start_time": {
                 $gte: start_date,
-                $lte: end_date
-              }
+                $lte: end_date,
+              },
             },
             async (err, data) => {
               if (err) {
@@ -338,19 +342,19 @@ router.post("/get-weekly-lifescore", async (req, res) => {
                   sleValue,
                   selValue,
                   relValue,
-                  unpValue
+                  unpValue,
                 ];
 
                 const weekInterval = {
                   startOfWeek: start_date,
-                  endOfWeek: end_date
+                  endOfWeek: end_date,
                 };
 
                 const parsedData = {
                   uuid,
                   weeklyCategories,
                   weekInterval,
-                  lifescore: lifescoreValue
+                  lifescore: lifescoreValue,
                 };
                 const totalcHours =
                   prodValue.cHours +
@@ -367,12 +371,12 @@ router.post("/get-weekly-lifescore", async (req, res) => {
                     message: `You have tracked ${moment
                       .duration(totalcHours, "hours")
                       .format(
-                        "hh:mm"
+                        "HH:mm"
                       )} hours. Please complete ${moment
                       .duration(168 - totalcHours, "hours")
                       .format(
-                        "hh:mm"
-                      )} hours more to get your lifescore for this week.`
+                        "HH:mm"
+                      )} hours more to get your lifescore for this week.`,
                   });
                 } else {
                   if (rndedTHours >= 168) {
