@@ -14,6 +14,7 @@ import feedback from "./routes/api/Feedback";
 import notifications from "./routes/api/Notifications";
 import usereventsv2 from "./routes/api/UserEvents/v2";
 import webadmin from "./routes/api/web";
+import { createUserReminder } from "./schedules";
 
 dotenv.config();
 
@@ -33,7 +34,9 @@ mongoose
     useUnifiedTopology: true
   })
   .then(() => console.log("mongodb connected"))
-  .catch(() => console.log(`We are unable to connect to the mongo db ${MONGO_URI}`));
+  .catch(() =>
+    console.log(`We are unable to connect to the mongo db ${MONGO_URI}`)
+  );
 
 app.use(cors());
 

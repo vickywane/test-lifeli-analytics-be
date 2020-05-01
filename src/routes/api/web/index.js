@@ -3,6 +3,7 @@ import moment from "moment";
 import userEvents from "../../../models/userEvents";
 import user from "../../../models/user";
 import eventAlerts from "../../../models/eventAlerts";
+import feedback from "../../../models/feedback";
 
 const router = express.Router();
 
@@ -17,13 +18,13 @@ router.get("/fetch-all-events", async (req, res) => {
     .select("uuid time_schedule note event_category created_on")
     .populate({
       path: "_user",
-      select: "uuid notification_settings.user_timezone",
+      select: "uuid notification_settings.user_timezone"
     })
     .exec((err, data) => {
       if (err) {
         return res.status(400).send({
           status: "error",
-          message: "An error occurred while attempting to pull events",
+          message: "An error occurred while attempting to pull events"
         });
       }
       return res.send({ status: "success", data });
@@ -79,7 +80,7 @@ router.get("/fetch-all-users", (req, res) => {
       if (err) {
         return res.status(400).send({
           status: "error",
-          message: "Unable to complete fetching of events",
+          message: "Unable to complete fetching of events"
         });
       }
       console.log("finished fetch users", new Date());
@@ -92,10 +93,22 @@ router.get("/fetch-all-reminders", (req, res) => {
     if (error) {
       res.status(400).send({
         status: "error",
-        message: "Unable to fetch reeminders at this time",
+        message: "Unable to fetch reeminders at this time"
       });
     }
 
+    return res.send({ status: "success", data });
+  });
+});
+
+router.get("/fetch-all-user-feedbacks", async (req, res) => {
+  await feedback.find({}, (err, data) => {
+    if (err) {
+      return res.status(400).send({
+        status: "error",
+        message: "Unable to fetch user feddbacks at this time"
+      });
+    }
     return res.send({ status: "success", data });
   });
 });

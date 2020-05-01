@@ -60,6 +60,9 @@ const userSchema = new Schema({
     date_time: String,
     avatar: String
   },
+  last_run: {
+    type: Date
+  },
   event_category: String
 });
 
