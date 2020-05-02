@@ -179,10 +179,14 @@ export const createUserReminder = async () => {
       if (last_event_time > 6 || !last_event_time) {
         console.log("scheduling notification", randomNo);
         console.log("scheduling for user", singleuser.uuid);
+
+        //send message to user
         createEmptyEventReminder(
           notificationMessages[randomNo],
           singleuser.push_token
         );
+
+        //update user model and continue
         user.findOneAndUpdate(
           { uuid: singleuser.uuid },
           { last_run: new Date() },
@@ -195,4 +199,6 @@ export const createUserReminder = async () => {
       }
     }
   });
+
+  return 0;
 };

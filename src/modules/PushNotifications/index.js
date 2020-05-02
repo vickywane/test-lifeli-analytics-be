@@ -104,9 +104,7 @@ export const createEmptyEventReminder = async ({ title, body }, push_token) => {
   let messages = [];
 
   if (!Expo.isExpoPushToken(push_token)) {
-    console.error(
-      `Push token ${person.push_token} is not a valid Expo push token`
-    );
+    console.error(`Push token ${push_token} is not a valid Expo push token`);
     return;
   }
 
