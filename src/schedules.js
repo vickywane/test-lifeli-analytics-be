@@ -172,6 +172,8 @@ export const createUserReminder = async () => {
         ? getLastRunDuration(filteredEvents.created_on)
         : null;
       if (last_event_time > 1 || !last_event_time) {
+        console.log("scheduling notification", randomNo);
+        console.log("scheduling for user", uuid);
         createEventReminder(notificationMessages[randomNo]);
         user.findOneAndUpdate(
           { uuid: singleuser.uuid },
