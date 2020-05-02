@@ -1,5 +1,8 @@
 import moment from "moment";
-import { createEventReminder } from "./modules/PushNotifications";
+import {
+  createEventReminder,
+  createEmptyEventReminder,
+} from "./modules/PushNotifications";
 import user from "./models/user";
 import userEvents from "./models/userEvents";
 import { Management } from "./constants/auth0";
@@ -176,7 +179,10 @@ export const createUserReminder = async () => {
       if (last_event_time > 6 || !last_event_time) {
         console.log("scheduling notification", randomNo);
         console.log("scheduling for user", singleuser.uuid);
-        createEventReminder(notificationMessages[randomNo]);
+        createEmptyEventReminder(
+          notificationMessages[randomNo],
+          singleuser.push_token
+        );
         user.findOneAndUpdate(
           { uuid: singleuser.uuid },
           { last_run: new Date() },

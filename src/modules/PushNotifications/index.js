@@ -3,15 +3,15 @@ import user from "../../models/user";
 
 import mongoose from "mongoose";
 
+let expo = new Expo();
+
 export const connInstance = () => {
   const MONGO_URI =
     process.env.NODE_ENV === "production"
       ? process.env.MONGO_URI
       : process.env.LOCAL_MONGO_URI;
 
-  let expo = new Expo();
-
-  //create intermitent database connection to pull tokens
+  //create intermitent database connection for one time jobs
   mongoose
     .connect(`${MONGO_URI}`, {
       useNewUrlParser: true,
@@ -24,10 +24,10 @@ export const connInstance = () => {
   return mongoose;
 };
 
-//load the User schema
-var User = connInstance().model("User");
-
 export const createEventReminder = async ({ title, body, timezone }) => {
+  //load the User schema
+  var User = connInstance().model("User");
+
   console.log("about to send message with title ", title);
   let messages = [];
   let timezoned_messages = [];
@@ -83,6 +83,45 @@ export const createEventReminder = async ({ title, body, timezone }) => {
   // let chunks = expo.chunkPushNotifications(messages);
 
   let chunks = expo.chunkPushNotifications(timezoned_messages);
+
+  let tickets = [];
+  (async () => {
+    for (let chunk of chunks) {
+      try {
+        let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+        console.log("ticketChunk", ticketChunk);
+        tickets.push(...ticketChunk);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  })();
+};
+
+export const createEmptyEventReminder = async ({ title, body }, push_token) => {
+  console.log("about to send empty reminder message with title ", title);
+  console.log("push token", push_token);
+  let messages = [];
+
+  if (!Expo.isExpoPushToken(push_token)) {
+    console.error(
+      `Push token ${person.push_token} is not a valid Expo push token`
+    );
+    return;
+  }
+
+  messages.push({
+    to: push_token,
+    sound: "default",
+    title,
+    body,
+    data: { withSome: "data" },
+    channelId: "event-creation-reminder",
+  });
+
+  // let chunks = expo.chunkPushNotifications(messages);
+
+  let chunks = expo.chunkPushNotifications(messages);
 
   let tickets = [];
   (async () => {
