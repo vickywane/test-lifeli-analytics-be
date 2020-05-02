@@ -3,25 +3,29 @@ import user from "../../models/user";
 
 import mongoose from "mongoose";
 
-const MONGO_URI =
-  process.env.NODE_ENV === "production"
-    ? process.env.MONGO_URI
-    : process.env.LOCAL_MONGO_URI;
+export const connInstance = () => {
+  const MONGO_URI =
+    process.env.NODE_ENV === "production"
+      ? process.env.MONGO_URI
+      : process.env.LOCAL_MONGO_URI;
 
-let expo = new Expo();
+  let expo = new Expo();
 
-//create intermitent database connection to pull tokens
-mongoose
-  .connect(`${MONGO_URI}`, {
-    useNewUrlParser: true,
-    useFindAndModify: false,
-    useUnifiedTopology: true
-  })
-  .then(() => console.log("mongodb connected"))
-  .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
+  //create intermitent database connection to pull tokens
+  mongoose
+    .connect(`${MONGO_URI}`, {
+      useNewUrlParser: true,
+      useFindAndModify: false,
+      useUnifiedTopology: true,
+    })
+    .then(() => console.log("mongodb connected"))
+    .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
+
+  return mongoose;
+};
 
 //load the User schema
-var User = mongoose.model("User");
+var User = connInstance().model("User");
 
 export const createEventReminder = async ({ title, body, timezone }) => {
   console.log("about to send message with title ", title);
@@ -51,7 +55,7 @@ export const createEventReminder = async ({ title, body, timezone }) => {
           title,
           body,
           data: { withSome: "data" },
-          channelId: "event-creation-reminder"
+          channelId: "event-creation-reminder",
         });
 
         console.log("about sending message for push token", person.push_token);
@@ -66,7 +70,7 @@ export const createEventReminder = async ({ title, body, timezone }) => {
               title,
               body,
               data: { withSome: "data" },
-              channelId: "event-creation-reminder"
+              channelId: "event-creation-reminder",
             });
           }
         } else {

@@ -1,34 +1,36 @@
 import moment from "moment";
 import { createEventReminder } from "./modules/PushNotifications";
 import user from "./models/user";
+import userEvents from "./models/userEvents";
 import { Management } from "./constants/auth0";
 import { generateRandomInteger } from "./helpers/randomIntGenerator";
+import { connInstance } from "./modules/PushNotifications";
 // const createEventReminder = require("./modules/PushNotifications");
 
-import mongoose from "mongoose";
-import userEvents from "./models/userEvents";
+// import mongoose from "mongoose";
+// import userEvents from "./models/userEvents";
 
-const connInstance = () => {
-  //initiate new db connection
-  const MONGO_URI =
-    process.env.NODE_ENV === "production"
-      ? process.env.MONGO_URI
-      : process.env.LOCAL_MONGO_URI;
+// const connInstance = () => {
+//   //initiate new db connection
+//   const MONGO_URI =
+//     process.env.NODE_ENV === "production"
+//       ? process.env.MONGO_URI
+//       : process.env.LOCAL_MONGO_URI;
 
-  //create intermitent database connection
-  mongoose
-    .connect(`${MONGO_URI}`, {
-      useNewUrlParser: true,
-      useFindAndModify: false,
-      useUnifiedTopology: true,
-    })
-    .then(() => console.log("mongodb connected"))
-    .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
+//   //create intermitent database connection
+//   mongoose
+//     .connect(`${MONGO_URI}`, {
+//       useNewUrlParser: true,
+//       useFindAndModify: false,
+//       useUnifiedTopology: true,
+//     })
+//     .then(() => console.log("mongodb connected"))
+//     .catch(() => console.log(`unable to connect to mongo db ${MONGO_URI}`));
 
-  //load the User schema
-  //  return user = mongoose.model("User");
-  return mongoose;
-};
+//   //load the User schema
+//   //  return user = mongoose.model("User");
+//   return mongoose;
+// };
 
 export const sixMorning = async (timezone) => {
   return await createEventReminder({
@@ -164,14 +166,14 @@ export const createUserReminder = async () => {
   const randomNo = generateRandomInteger(0, notificationMessages.length - 1);
 
   getUsers.forEach((singleuser, i) => {
-    if (getLastRunDuration(singleuser.last_run) >= 1) {
+    if (getLastRunDuration(singleuser.last_run) >= 6) {
       const filteredEvents = getEvents.find(
         (event) => event.uuid === singleuser.uuid
       );
       const last_event_time = filteredEvents
         ? getLastRunDuration(filteredEvents.created_on)
         : null;
-      if (last_event_time > 1 || !last_event_time) {
+      if (last_event_time > 6 || !last_event_time) {
         console.log("scheduling notification", randomNo);
         console.log("scheduling for user", singleuser.uuid);
         createEventReminder(notificationMessages[randomNo]);
