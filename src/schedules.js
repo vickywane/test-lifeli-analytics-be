@@ -206,7 +206,6 @@ export const createUserReminder = async () => {
   });
 
   //send messages
-  console.log("messages", messages);
   sendEmptyEventReminders(messages);
 
   return;
