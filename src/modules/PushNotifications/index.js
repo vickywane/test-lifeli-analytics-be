@@ -98,26 +98,26 @@ export const createEventReminder = async ({ title, body, timezone }) => {
   })();
 };
 
-export const createEmptyEventReminder = async ({ title, body }, push_token) => {
-  console.log("about to send empty reminder message with title ", title);
-  console.log("push token", push_token);
-  let messages = [];
-
+export const createEmptyEventReminder = ({ title, body }, push_token) => {
   if (!Expo.isExpoPushToken(push_token)) {
     console.error(`Push token ${push_token} is not a valid Expo push token`);
-    return;
+    return false;
   }
 
-  messages.push({
+  return {
     to: push_token,
     sound: "default",
     title,
     body,
     data: { withSome: "data" },
     channelId: "event-creation-reminder",
-  });
+  };
 
   // let chunks = expo.chunkPushNotifications(messages);
+};
+
+export const sendEmptyEventReminders = (messages) => {
+  console.log("sending chunk...");
 
   let chunks = expo.chunkPushNotifications(messages);
 

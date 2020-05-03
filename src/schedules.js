@@ -2,6 +2,7 @@ import moment from "moment";
 import {
   createEventReminder,
   createEmptyEventReminder,
+  sendEmptyEventReminders,
 } from "./modules/PushNotifications";
 import user from "./models/user";
 import userEvents from "./models/userEvents";
@@ -160,6 +161,7 @@ const notificationMessages = [
 export const createUserReminder = async () => {
   const user = connInstance().model("User");
   const userEvents = connInstance().model("UserEvents");
+  const messages = [];
 
   const [getUsers, getEvents] = await Promise.all([
     user.find({}),
@@ -180,11 +182,14 @@ export const createUserReminder = async () => {
         console.log("scheduling notification", randomNo);
         console.log("scheduling for user", singleuser.uuid);
 
-        //send message to user
-        createEmptyEventReminder(
+        //build notification messages
+        let notifyObj = createEmptyEventReminder(
           notificationMessages[randomNo],
           singleuser.push_token
         );
+        if (notifyObj !== false) {
+          messages.push(notifyObj);
+        }
 
         //update user model and continue
         user.findOneAndUpdate(
@@ -200,5 +205,9 @@ export const createUserReminder = async () => {
     }
   });
 
-  return 0;
+  //send messages
+  console.log("messages", messages);
+  sendEmptyEventReminders(messages);
+
+  return;
 };
