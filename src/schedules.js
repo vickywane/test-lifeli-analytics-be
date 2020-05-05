@@ -137,24 +137,79 @@ const getLastRunDuration = (last_time) => {
 
 const notificationMessages = [
   {
-    title: "🤓Knowing yourself aids clarity!",
+    title: "🤓 Knowing yourself aids clarity!",
     body:
       "Clarity of life is essential to making better decisions every day towards achieving your goals and becoming your best self. Know thyself!",
   },
   {
-    title: "💵Get that Benjamins!",
+    title: "💵 Get that Benjamins!",
     body:
       "Do you know Benjamin Franklin practiced time blocking to schedule his activities and time tracking to help him to reflect on his day?",
   },
   {
-    title: "👨‍🦳🧑‍🦳Call your grandparents!",
+    title: "👨‍🦳🧑‍🦳 Call your grandparents!",
     body:
       "Family is everything. It’s easy to get caught up in the rat race hustling to secure that bag. Don’t leave the most important people behind. Pick up the phone.",
   },
   {
-    title: "🦸🏼‍♀️🦹Calling Superheros!",
+    title: "🦸🏼‍♀️🦹 Calling Superheros!",
     body:
       "When last did you do something good for someone else? If you are good at doing anything, you have superpowers. Let’s volunteer some more.",
+  },
+  {
+    title: "🏋️‍♂️🏋️ More Muscle = Less Fat! ",
+    body:
+      "When last did you hit the gym? Hmmm! Likely not recently. Check out some home strength training workouts on Youtube. Then schedule it in.",
+  },
+  {
+    title: "🏊‍♀️🚴‍♀️🏃‍♀️ Cardio for heart health!",
+    body:
+      "Apart from improving your endurance, running, swimming, and cycling is great for your heart. If you want to push it, sign up for a triathlon.",
+  },
+  {
+    title: "🙏🏾🧘‍♂️ Pray or/and Meditate, both works!",
+    body:
+      "Do you know Spiritual activities give you energy? Yes, Spiritual Energy. Oxytocin to be specific. Get on Google to learn more about ‘happy chemicals’.",
+  },
+  {
+    title: "🚗🚎🚝✈️ Convert Drive time to Class time! ",
+    body:
+      "Successful people seek to maximize every minute of the day. Many convert hours spent on Travel & Errand to Personal Development time. Try it!",
+  },
+  {
+    title: "📖📚 Audiobooks = Print Books!",
+    body:
+      "Don’t have enough time to finish one book in a year? Why don’t you try finishing 52 books in 52 weeks? Eyes free self-improvement in the shower.",
+  },
+  {
+    title: "👨‍🎓👩‍🎓 Continuing Education?",
+    body:
+      "Whatever you do specifically to increase your value in the marketplace and generate more income is Career Development. Go get that money!",
+  },
+  {
+    title: "📺📱 Netflix & Chill on Social Media!",
+    body:
+      "Are you one of those people who watch Netflix and scroll on your favorite social media platform? Whatever floats your boat. Enjoy your Self Care!",
+  },
+  {
+    title: "🐱🐶 Got no Friends?",
+    body:
+      "Yes, you do. Spending time with your pet is better than spending time with a human with negative vibes. Don’t tell them we told you so. Fetch!",
+  },
+  {
+    title: "😴🛏 Got Sleep?",
+    body:
+      "What time do you go to bed? How many hours do you sleep each night? Average amount per week? Are you well-rested? Are you sure?",
+  },
+  {
+    title: "👩‍🍳🧺🧼 Cook, Laundry, Clean!",
+    body:
+      "Really want to multi-task? This is when you should absolutely do it. Pair up Errands with Personal Development or Self Care activities, always!",
+  },
+  {
+    title: "🧑‍💻👩‍💻 Work or/and Business!",
+    body:
+      "Schedule your Work & Business related activities. Have a start time and an end time. Take regular breaks. Track your work hours, great job!",
   },
 ];
 
@@ -169,7 +224,6 @@ export const createUserReminder = async () => {
   ]);
 
   const randomNo = generateRandomInteger(0, notificationMessages.length - 1);
-
   getUsers.forEach((singleuser, i) => {
     if (getLastRunDuration(singleuser.last_run) >= 6) {
       const filteredEvents = getEvents.find(
@@ -178,7 +232,7 @@ export const createUserReminder = async () => {
       const last_event_time = filteredEvents
         ? getLastRunDuration(filteredEvents.created_on)
         : null;
-      if (last_event_time > 6 || !last_event_time) {
+      if (last_event_time >= 6 || !last_event_time) {
         console.log("scheduling notification", randomNo);
         console.log("scheduling for user", singleuser.uuid);
 
