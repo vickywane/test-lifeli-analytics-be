@@ -372,7 +372,7 @@ router.post("/get-weekly-lifescore", async (req, res) => {
                       .duration(totalcHours, "hours")
                       .format(
                         "HH:mm"
-                      )} hours. \n Please complete ${moment
+                      )} hours. Please complete ${moment
                       .duration(168 - totalcHours, "hours")
                       .format(
                         "HH:mm"
