@@ -4,6 +4,7 @@ import userEvents from "../../../models/userEvents";
 import user from "../../../models/user";
 import eventAlerts from "../../../models/eventAlerts";
 import feedback from "../../../models/feedback";
+import lifescoreModel from "../../../models/lifescoreModel";
 
 const router = express.Router();
 
@@ -107,6 +108,18 @@ router.get("/fetch-all-user-feedbacks", async (req, res) => {
       return res.status(400).send({
         status: "error",
         message: "Unable to fetch user feddbacks at this time"
+      });
+    }
+    return res.send({ status: "success", data });
+  });
+});
+
+router.get("/fetch-all-lifescores", async (req, res) => {
+  await lifescoreModel.find({}, (err, data) => {
+    if (err) {
+      return res.status(400).send({
+        status: "error",
+        message: "Unable to fetch lifescores at this time"
       });
     }
     return res.send({ status: "success", data });
