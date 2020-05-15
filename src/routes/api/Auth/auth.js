@@ -6,12 +6,13 @@ dotenv.config();
 import User from "../../../models/user";
 import { Authentication, Management } from "../../../constants/auth0";
 import sendMail from "../../../modules/emails";
+import AddToMailchimp from "../../../helpers/mailchimpContact";
 
 const { AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET } = process.env;
 
 const router = express.Router();
 
-const validateEmail = email => {
+const validateEmail = (email) => {
   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return re.test(String(email).toLowerCase());
 };
@@ -21,7 +22,7 @@ router.post("/register", async (req, res) => {
   var data = {
     email,
     password,
-    connection: "Username-Password-Authentication" // Optional field.
+    connection: "Username-Password-Authentication", // Optional field.
   };
 
   var newData = {
@@ -29,7 +30,7 @@ router.post("/register", async (req, res) => {
     username: email,
     password,
     realm: "Username-Password-Authentication", // Optional field.
-    scope: "openid" // Optional field.
+    scope: "openid", // Optional field.
   };
   const isValid = validateEmail(email);
   if (!isValid) {
@@ -38,12 +39,12 @@ router.post("/register", async (req, res) => {
       .send({ status: "error", message: "email is invalid" });
   } else {
     await Management.createUser(data)
-      .then(async data => {
+      .then(async (data) => {
         // res.json(data);
         const uuid = data.identities[0].user_id;
         try {
-          await User.create({ uuid }).then(() => {
-            Authentication.oauth.passwordGrant(newData, function(
+          await User.create({ uuid, name: data.name }).then(() => {
+            Authentication.oauth.passwordGrant(newData, function (
               err,
               userData
             ) {
@@ -52,6 +53,9 @@ router.post("/register", async (req, res) => {
               }
               res.send({ status: "success", message: userData });
             });
+
+            //subscribe user to mailchimp list
+            AddToMailchimp(data.email, data.name);
           });
         } catch (error) {
           res
@@ -59,7 +63,7 @@ router.post("/register", async (req, res) => {
             .send({ status: "error", message: "Unable to save user" });
         }
       })
-      .catch(err => res.send({ status: "error", message: err.message }));
+      .catch((err) => res.send({ status: "error", message: err.message }));
   }
 });
 
@@ -70,9 +74,9 @@ router.post("/login", (req, res) => {
     username: email,
     password,
     realm: "Username-Password-Authentication", // Optional field.
-    scope: "openid" // Optional field.
+    scope: "openid", // Optional field.
   };
-  Authentication.oauth.passwordGrant(data, async function(err, userData) {
+  Authentication.oauth.passwordGrant(data, async function (err, userData) {
     if (err) {
       let newErr = JSON.parse(err.message);
       const { error_description } = newErr;
@@ -82,13 +86,13 @@ router.post("/login", (req, res) => {
     }
     const dynamic_template_data = {
       device,
-      date
+      date,
     };
     let mailData = {
       receiver: email,
       template: "d-d45f15768daa4aba9aed17f0ae8bcfec",
       sender: "info@liferithms.com",
-      dynamic_template_data
+      dynamic_template_data,
     };
     if (device) {
       // sendMail(mailData);
@@ -101,14 +105,14 @@ router.post("/social-login", async (req, res) => {
   const { uuid } = req.body;
   //   if (!uuid) throw "please input a valid uuid";
   User.findOne({ uuid: uuid })
-    .then(user => {
+    .then((user) => {
       if (!user) {
         try {
           User.create({ uuid })
             .then(() => {
               res.send({ status: "success", message: "User added" });
             })
-            .catch(err => {
+            .catch((err) => {
               throw err;
             });
         } catch (error) {
@@ -117,10 +121,10 @@ router.post("/social-login", async (req, res) => {
       } else {
         try {
           User.updateOne({ uuid })
-            .then(user => {
+            .then((user) => {
               res.send({ status: "success", message: "User updated" });
             })
-            .catch(err => {
+            .catch((err) => {
               throw err;
             });
         } catch (error) {
@@ -128,16 +132,16 @@ router.post("/social-login", async (req, res) => {
         }
       }
     })
-    .catch(err => console.log(err));
+    .catch((err) => console.log(err));
 });
 
 router.post("/refresh-token", (req, res) => {
   Authentication.clientCredentialsGrant(
     {
       audience: "https://lifechitect.auth0.com/api/v2/",
-      scope: "read:users update:users"
+      scope: "read:users update:users",
     },
-    function(err, response) {
+    function (err, response) {
       if (err) {
         res.status(404).json(err);
         // Handle error.
@@ -158,18 +162,18 @@ router.post("/verify-email", (req, res) => {
       .send({ status: "error", message: "Email is invalid" });
   } else {
     Management.getUsersByEmail(email)
-      .then(function(users) {
+      .then(function (users) {
         console.log(users);
         if (users.length === 0) {
           return res.send({ status: "success", message: "No user" });
         } else {
           return res.send({
             status: "error",
-            message: "A user already exist with the provided credentials."
+            message: "A user already exist with the provided credentials.",
           });
         }
       })
-      .catch(err => {
+      .catch((err) => {
         res
           .status(406)
           .send({ status: "error", message: "server error", err: err });
@@ -190,12 +194,12 @@ router.post("/forgot-password", (req, res) => {
       // client_id: "GVNp0gbmQxPJHrGmp1IaGHc3rPPYnbxa",
       client_id: `${AUTH0_CLIENT_ID}`,
       email,
-      connection: "Username-Password-Authentication"
+      connection: "Username-Password-Authentication",
     },
-    json: true
+    json: true,
   };
 
-  request(options, function(error, response, body) {
+  request(options, function (error, response, body) {
     if (error) throw new Error(error);
     res.json(body);
   });
