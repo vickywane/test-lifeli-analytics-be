@@ -1,7 +1,7 @@
 import Mailchimp from "mailchimp-api-v3";
 
 //Add new signed up user to mailchmip
-const AddToMailchimp = (email, name) => {
+const AddToMailchimp = (email, name = "") => {
   var mailchimp = new Mailchimp(process.env.MAILCHIMP_API_KEY);
 
   mailchimp.request(

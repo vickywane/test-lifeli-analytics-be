@@ -102,7 +102,8 @@ router.post("/login", (req, res) => {
 });
 
 router.post("/social-login", async (req, res) => {
-  const { uuid } = req.body;
+  const { uuid, email } = req.body;
+  console.log("response", req.body);
   //   if (!uuid) throw "please input a valid uuid";
   User.findOne({ uuid: uuid })
     .then((user) => {
@@ -110,6 +111,8 @@ router.post("/social-login", async (req, res) => {
         try {
           User.create({ uuid })
             .then(() => {
+              //subscribe user to mailchimp list
+              AddToMailchimp(email);
               res.send({ status: "success", message: "User added" });
             })
             .catch((err) => {
