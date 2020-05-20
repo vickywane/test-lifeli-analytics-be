@@ -385,7 +385,7 @@ router.post("/get-weekly-lifescore", async (req, res) => {
                       .duration(168 - totalcHours, "hours")
                       .format(
                         "HH:mm"
-                      )} hours more to get your Life Score for the week.`
+                      )} hours more to get your lifescore for this week.`
                   });
                 } else {
                   if (rndedTHours >= 168) {
