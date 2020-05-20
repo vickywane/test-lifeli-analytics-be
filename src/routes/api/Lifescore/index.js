@@ -22,11 +22,14 @@ const getLifescore = (
       unpaidCalc) /
       6) *
     100;
+  if (lifeScore < 0) {
+    return 0;
+  }
   return lifeScore;
 };
 const getExpectedHours = async (event_category_code) => {
   const eHour = await eventCategories.findOne({
-    category_code: event_category_code,
+    category_code: event_category_code
   });
   const actualEhour = eHour ? eHour.expected_hours : 0;
   return actualEhour;
@@ -76,7 +79,7 @@ var proData = async (data) => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#17A69D",
-    icon: "work",
+    icon: "work"
   };
 };
 
@@ -109,7 +112,7 @@ var welData = async (data) => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#8799F2",
-    icon: "wellness",
+    icon: "wellness"
   };
 
   // console.log(fitness);
@@ -142,7 +145,7 @@ var unpData = async (data) => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#C99189",
-    icon: "unpaid",
+    icon: "unpaid"
   };
 
   // console.log(travel);
@@ -167,7 +170,7 @@ var sleData = async (data) => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#36C0F9",
-    icon: "sleep",
+    icon: "sleep"
   };
 };
 
@@ -192,7 +195,7 @@ var selData = async (data) => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#81D134",
-    icon: "self-care",
+    icon: "self-care"
   };
 };
 
@@ -217,7 +220,7 @@ var relData = async (data) => {
     cHours: moment.duration(cHours).asHours(),
     eHours,
     color: "#27B072",
-    icon: "relationship",
+    icon: "relationship"
   };
 };
 
@@ -234,7 +237,7 @@ router.post("/get-weekly-lifescore", async (req, res) => {
     {
       uuid,
       "weekInterval.startOfWeek": start_date,
-      "weekInterval.endOfWeek": end_date,
+      "weekInterval.endOfWeek": end_date
     },
     async (err, data) => {
       if (err) {
@@ -246,8 +249,8 @@ router.post("/get-weekly-lifescore", async (req, res) => {
               uuid,
               "time_schedule.start_time": {
                 $gte: start_date,
-                $lte: end_date,
-              },
+                $lte: end_date
+              }
             },
             async (err, data) => {
               if (err) {
@@ -342,19 +345,19 @@ router.post("/get-weekly-lifescore", async (req, res) => {
                   sleValue,
                   selValue,
                   relValue,
-                  unpValue,
+                  unpValue
                 ];
 
                 const weekInterval = {
                   startOfWeek: start_date,
-                  endOfWeek: end_date,
+                  endOfWeek: end_date
                 };
 
                 const parsedData = {
                   uuid,
                   weeklyCategories,
                   weekInterval,
-                  lifescore: lifescoreValue,
+                  lifescore: lifescoreValue
                 };
                 const totalcHours =
                   prodValue.cHours +
@@ -365,9 +368,15 @@ router.post("/get-weekly-lifescore", async (req, res) => {
                   unpValue.cHours;
                 const rndedTHours = Math.round(totalcHours);
                 if (rndedTHours < 168) {
+                  // console.log(
+                  //   moment.duration(168 - totalcHours, "hours").format("HH:mm")
+                  // );
                   return res.send({
                     status: "warning",
                     cHours: totalcHours,
+                    trackedHours: moment
+                      .duration(168 - totalcHours, "hours")
+                      .format("HH:mm"),
                     message: `You have tracked ${moment
                       .duration(totalcHours, "hours")
                       .format(
@@ -376,7 +385,7 @@ router.post("/get-weekly-lifescore", async (req, res) => {
                       .duration(168 - totalcHours, "hours")
                       .format(
                         "HH:mm"
-                      )} hours more to get your Life Score for the week.`,
+                      )} hours more to get your Life Score for the week.`
                   });
                 } else {
                   if (rndedTHours >= 168) {
