@@ -102,17 +102,33 @@ router.post("/login", (req, res) => {
 });
 
 router.post("/social-login", async (req, res) => {
-  const { uuid, email } = req.body;
-  console.log("response", req.body);
-  //   if (!uuid) throw "please input a valid uuid";
+  const { uuid } = req.body;
+
+  //fetch user email and register with mailchimp
+  //Mailchimp will fail if email already exist
+  Management.getUser({ id: `google-oauth2|${uuid}` }, function (err, user) {
+    if (user) {
+      AddToMailchimp(user.email, user.name);
+    } else {
+      console.log("trying apple uuid format...");
+      //try apple authentication
+      Management.getUser({ id: `apple|${uuid}` }, function (error, res) {
+        if (res) {
+          AddToMailchimp(res.email, res.name);
+        } else {
+          console.log("Invalid uuid format");
+          console.log("Error:", error);
+        }
+      });
+    }
+  });
+
   User.findOne({ uuid: uuid })
     .then((user) => {
       if (!user) {
         try {
           User.create({ uuid })
             .then(() => {
-              //subscribe user to mailchimp list
-              AddToMailchimp(email);
               res.send({ status: "success", message: "User added" });
             })
             .catch((err) => {

@@ -24,7 +24,7 @@ const AddToMailchimp = (email, name = "") => {
       if (err) {
         console.log("Couldn't subscribe user", err);
       } else {
-        console.log("User Subscribed to mailchimp", result);
+        console.log("User Subscribed to mailchimp with success...");
       }
     }
   );
