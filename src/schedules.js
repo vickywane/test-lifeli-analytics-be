@@ -87,9 +87,9 @@ const handleUserModelUpdate = (id, created_at) => {
     { join_date: created_at },
     (err, data) => {
       if (err) {
-        console.log("not saved");
+        console.log("could'nt update join date");
       } else {
-        console.log("saved");
+        console.log("join date updated successfully...");
       }
     }
   );
@@ -102,28 +102,43 @@ export const addJoinDate = () => {
   user.find((err, users) => {
     if (!err) {
       users.forEach((user) =>
-        Management.getUsers({ id: `auth0|${user.uuid}` }, (error, data) => {
-          if (error) {
-            Management.getUsers(
-              { id: `google-oauth2|${user.uuid}` },
-              (error, data) => {
-                if (!error) {
-                  console.log("okayu");
-                  handleUserModelUpdate(user.uuid, data.created_at);
+        setTimeout(() => {
+          Management.getUsers({ id: `auth0|${user.uuid}` }, (error, data) => {
+            if (error) {
+              Management.getUsers(
+                { id: `google-oauth2|${user.uuid}` },
+                (error, data) => {
+                  if (!error) {
+                    console.log("google user found with id successfully...");
+                    handleUserModelUpdate(user.uuid, data.created_at);
+                  } else {
+                    //try apple id find
+                    Management.getUsers(
+                      { id: `apple|${user.uuid}` },
+                      (error, data) => {
+                        if (!error) {
+                          console.log(
+                            "apple user found with id successfully..."
+                          );
+                          handleUserModelUpdate(user.uuid, data.created_at);
+                        }
+                      }
+                    );
+                  }
                 }
-              }
-            );
-          } else {
-            handleUserModelUpdate(user.uuid, data.created_at);
-          }
-        })
+              );
+            } else {
+              handleUserModelUpdate(user.uuid, data.created_at);
+            }
+          });
+        }, 500)
       );
       // console.log(users);
     } else {
       console.log("Sorry an error occured in fetching the user.");
     }
   });
-  console.log("users join date updated");
+  console.log("users join date updated and function exiting ...");
 };
 
 const getLastRunDuration = (last_time) => {

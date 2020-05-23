@@ -6,7 +6,7 @@ const AddToMailchimp = (email, name = "") => {
 
   mailchimp.request(
     {
-      // method : 'get|post|put|patch|delete',
+      // method : 'get|post|put|patch|delete', types of requests
       method: "post",
       path: "/lists/{list_id}/members",
       path_params: {
