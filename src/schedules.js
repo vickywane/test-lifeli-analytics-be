@@ -131,7 +131,7 @@ export const addJoinDate = () => {
               handleUserModelUpdate(user.uuid, data.created_at);
             }
           });
-        }, 500)
+        }, 1000)
       );
       // console.log(users);
     } else {
