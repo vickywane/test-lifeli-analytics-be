@@ -157,10 +157,27 @@ const getLastRunDuration = (last_time) => {
 
 const notificationMessages = [
   {
+    title: "📝📊Activity Tracking Reminder!",
+    body:
+      "Add today’s activities before you forget. The more activities you track, the deeper your weekly insights!",
+  },
+  {
+    title: "📝📊Activity Tracking Reminder!",
+    body:
+      "Add today’s activities before you forget. The more activities you track, the deeper your weekly insights!",
+  },
+  {
     title: "🤓 Knowing yourself aids clarity!",
     body:
       "Clarity of life is essential to making better decisions every day towards achieving your goals and becoming your best self. Know thyself!",
   },
+
+  {
+    title: "📝📊Activity Tracking Reminder!",
+    body:
+      "Add today’s activities before you forget. The more activities you track, the deeper your weekly insights!",
+  },
+
   {
     title: "💵 Get that Benjamins!",
     body:
