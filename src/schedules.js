@@ -95,14 +95,19 @@ const handleUserModelUpdate = (id, created_at) => {
   );
 };
 
+const processUserJoinDate = (callback) => {
+  setTimeout(callback, 1000);
+};
+
 export const addJoinDate = () => {
   const user = connInstance().model("User");
   // const user = conn.model("User");
-
+  let counter = 0;
   user.find((err, users) => {
     if (!err) {
+      console.log("total users", users.length);
       users.forEach((user) =>
-        setTimeout(() => {
+        processUserJoinDate(() =>
           Management.getUsers({ id: `auth0|${user.uuid}` }, (error, data) => {
             if (error) {
               Management.getUsers(
@@ -130,15 +135,15 @@ export const addJoinDate = () => {
             } else {
               handleUserModelUpdate(user.uuid, data.created_at);
             }
-          });
-        }, 1000)
+            counter++;
+            console.log("updated users", counter);
+          })
+        )
       );
-      // console.log(users);
     } else {
       console.log("Sorry an error occured in fetching the user.");
     }
   });
-  console.log("users join date updated and function exiting ...");
 };
 
 const getLastRunDuration = (last_time) => {
