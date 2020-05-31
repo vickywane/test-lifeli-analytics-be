@@ -95,6 +95,7 @@ const handleUserModelUpdate = (id, created_at) => {
   );
 };
 
+//necessary to overcome auth0 2 request per second api limitation for free accounts
 const processUserJoinDate = (callback) => {
   setTimeout(callback, 1000);
 };
