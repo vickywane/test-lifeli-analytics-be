@@ -39,6 +39,8 @@ const userEvents = new Schema(
     event_category: { type: String, required: true },
     activity_code: { type: String, required: true },
     event_category_code: { type: String, required: true },
+    event_status: { type: String, enum: ["confirmed", "pending"] },
+    event_type: { type: String, enum: ["tracked", "planned"] },
     data_source: {
       type: String,
       default: "IN_APP"
