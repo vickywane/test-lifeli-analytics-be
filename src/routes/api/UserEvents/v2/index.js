@@ -30,6 +30,8 @@ router.post("/add-event", async (req, res) => {
     activity_category,
     activity_code,
     event_category,
+    event_status,
+    event_type,
     event_category_code,
     reminder_time,
     alert_time_code
@@ -57,6 +59,8 @@ router.post("/add-event", async (req, res) => {
     activity_category,
     activity_code,
     event_category,
+    event_status,
+    event_type,
     event_category_code,
     last_updated_on: new Date()
   };
@@ -274,6 +278,26 @@ router.post("/edit-event", async (req, res) => {
       message: "End date cannot be occur before the start date"
     });
   }
+});
+
+router.post("/update-user-event-status", (req, res) => {
+  const { event_id } = req.body;
+  userEvents.findByIdAndUpdate(
+    { _id: event_id },
+    { event_status: "confirmed" },
+    (err, data) => {
+      if (err) {
+        return res.status(400).send({
+          status: "error",
+          message: "Unable to update user events at this time"
+        });
+      }
+      return res.send({
+        status: "success",
+        messag: "Activity has been tracked"
+      });
+    }
+  );
 });
 
 export default router;
