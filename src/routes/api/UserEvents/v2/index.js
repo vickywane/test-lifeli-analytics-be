@@ -34,7 +34,7 @@ router.post("/add-event", async (req, res) => {
     event_type,
     event_category_code,
     reminder_time,
-    alert_time_code
+    alert_time_code,
   } = req.body;
   const data = {
     uuid,
@@ -42,16 +42,16 @@ router.post("/add-event", async (req, res) => {
     time_schedule: {
       start_time,
       end_time,
-      hours_spent
+      hours_spent,
     },
     alert_time: {
       text: alert_time_text,
-      val: alert_time_value
+      val: alert_time_value,
     },
     repeat_time: {
       text: repeat_time_text,
       val: repeat_time_value,
-      reoccur: repeat_time_reoccur
+      reoccur: repeat_time_reoccur,
     },
     location,
     lat,
@@ -62,7 +62,7 @@ router.post("/add-event", async (req, res) => {
     event_status,
     event_type,
     event_category_code,
-    last_updated_on: new Date()
+    last_updated_on: new Date(),
   };
 
   if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
@@ -87,7 +87,7 @@ router.post("/add-event", async (req, res) => {
             event_title: `${activity_category}: ${note}`,
             reminder_time,
             alert_time_code,
-            event_id: truncatedData._id
+            event_id: truncatedData._id,
           };
           if (alert_time_code !== "none") {
             eventAlerts.create(alertObj, (err, alertData) => {
@@ -100,14 +100,14 @@ router.post("/add-event", async (req, res) => {
                 status: "success",
                 data: truncatedData,
                 alertData,
-                message: "details added successfully"
+                message: "details added successfully",
               });
             });
           } else {
             return res.send({
               status: "success",
               data: truncatedData,
-              message: "details added successfully"
+              message: "details added successfully",
             });
           }
         }
@@ -119,7 +119,7 @@ router.post("/add-event", async (req, res) => {
   } else {
     return res.status(404).send({
       status: "error",
-      message: "Event end date cannot be earlier than the start date"
+      message: "Event end date cannot be earlier than the start date",
     });
   }
 });
@@ -130,12 +130,12 @@ router.get("/fetch-events-notifications", (req, res) => {
     if (err) {
       return res.status(404).send({
         status: "error",
-        message: "Unable to fetch notifications at this time"
+        message: "Unable to fetch notifications at this time",
       });
     }
     return res.send({
       status: "success",
-      data
+      data,
     });
   });
 });
@@ -186,7 +186,7 @@ router.post("/edit-event", async (req, res) => {
     event_category,
     event_category_code,
     reminder_time,
-    alert_time_code
+    alert_time_code,
   } = req.body;
   const data = {
     uuid,
@@ -194,16 +194,16 @@ router.post("/edit-event", async (req, res) => {
     time_schedule: {
       start_time,
       end_time,
-      hours_spent
+      hours_spent,
     },
     alert_time: {
       text: alert_time_text,
-      val: alert_time_value
+      val: alert_time_value,
     },
     repeat_time: {
       text: repeat_time_text,
       val: repeat_time_value,
-      reoccur: repeat_time_reoccur
+      reoccur: repeat_time_reoccur,
     },
     location,
     lat,
@@ -212,7 +212,7 @@ router.post("/edit-event", async (req, res) => {
     activity_code,
     event_category,
     event_category_code,
-    last_updated_on: new Date()
+    last_updated_on: new Date(),
   };
 
   const alertObj = {
@@ -222,7 +222,7 @@ router.post("/edit-event", async (req, res) => {
     event_title: `${activity_category}: ${note}`,
     reminder_time,
     alert_time_code,
-    event_id
+    event_id,
   };
   if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
     await userEvents.findByIdAndUpdate(
@@ -244,7 +244,7 @@ router.post("/edit-event", async (req, res) => {
               } else {
                 return res.send({
                   status: "success",
-                  message: "Event updated successfully"
+                  message: "Event updated successfully",
                 });
               }
             });
@@ -258,14 +258,14 @@ router.post("/edit-event", async (req, res) => {
                 } else {
                   return res.send({
                     status: "success",
-                    message: "Event updated successfully"
+                    message: "Event updated successfully",
                   });
                 }
               });
             } else {
               return res.send({
                 status: "success",
-                message: "Event updated successfully"
+                message: "Event updated successfully",
               });
             }
           }
@@ -275,7 +275,7 @@ router.post("/edit-event", async (req, res) => {
   } else {
     return res.status(404).send({
       status: "error",
-      message: "End date cannot be occur before the start date"
+      message: "End date cannot be occur before the start date",
     });
   }
 });
@@ -287,14 +287,15 @@ router.post("/update-user-event-status", (req, res) => {
     { event_status: "confirmed" },
     (err, data) => {
       if (err) {
+        console.log(err);
         return res.status(400).send({
           status: "error",
-          message: "Unable to update user events at this time"
+          message: "Unable to update activity at this time",
         });
       }
       return res.send({
         status: "success",
-        messag: "Activity has been tracked"
+        messag: "Activity updated successfully",
       });
     }
   );
