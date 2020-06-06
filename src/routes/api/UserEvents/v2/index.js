@@ -294,7 +294,7 @@ router.post("/update-user-event-status", (req, res) => {
       }
       return res.send({
         status: "success",
-        messag: "Activity has been tracked"
+        message: "Activity has been tracked"
       });
     }
   );
