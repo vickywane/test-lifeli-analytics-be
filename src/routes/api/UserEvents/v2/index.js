@@ -185,6 +185,7 @@ router.post("/edit-event", async (req, res) => {
     activity_code,
     event_category,
     event_category_code,
+    event_status,
     reminder_time,
     alert_time_code,
   } = req.body;
@@ -212,6 +213,7 @@ router.post("/edit-event", async (req, res) => {
     activity_code,
     event_category,
     event_category_code,
+    event_status,
     last_updated_on: new Date(),
   };
 
