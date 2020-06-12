@@ -13,6 +13,7 @@ import lifescore from "./routes/api/Lifescore";
 import feedback from "./routes/api/Feedback";
 import notifications from "./routes/api/Notifications";
 import usereventsv2 from "./routes/api/UserEvents/v2";
+import usergoals from "./routes/api/UserGoals/v1";
 import webadmin from "./routes/api/web";
 import { createUserReminder } from "./schedules";
 
@@ -56,6 +57,7 @@ app.use("/api/v1/notifications", notifications);
 app.use("/api/v1", fetchPoints);
 app.use("/api/v1", userevents);
 app.use("/api/v2", usereventsv2);
+app.use("/api/v1", usergoals);
 app.use("/api/v1/admin", webadmin);
 
 app.use((req, res) => {
