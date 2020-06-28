@@ -29,7 +29,7 @@ router.post("/create-goal", async (req, res) => {
 
 router.get("/fetch-all-goals", (req, res) => {
   const { uuid } = req.query;
-  goalsModel.find({ uuid }, (err, data) => {
+  goalsModel.find({ uuid }, null, { sort: { created_at: -1 } }, (err, data) => {
     if (err) {
       return res.send({ status: "error", message: "Could not find any event" });
     }
