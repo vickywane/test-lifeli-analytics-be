@@ -4,8 +4,27 @@
 // date = 11/12/2019
 
 import express from "express";
+import Moment from "moment";
+import { extendMoment } from "moment-range";
+
+const moment = extendMoment(Moment);
 import userEvents from "../../../../models/userEvents";
 import eventAlerts from "../../../../models/eventAlerts";
+
+const checkExistingDuration = (allevents, startdate, enddate) => {
+  var check = allevents.find((event) => {
+    const startplusone = moment(startdate).add(1, "second");
+    const endminusone = moment(enddate).subtract(1, "second");
+    const range1 = moment.range(startplusone, endminusone);
+    const range2 = moment.range(
+      event.time_schedule.start_time,
+      event.time_schedule.end_time
+    );
+    return range1.overlaps(range2);
+  });
+  // console.log(check);
+  return check;
+};
 
 const router = express.Router();
 // create a new event
@@ -65,63 +84,77 @@ router.post("/add-event", async (req, res) => {
     last_updated_on: new Date()
   };
 
-  if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
-    try {
-      await userEvents.create(data, (err, docs) => {
-        if (err)
-          res.status(400).json({ status: "error", message: err.message });
-        else {
-          const {
-            uuid,
-            alert_time,
-            repeat_time,
-            last_updated_on,
-            description,
-            name,
-            ...truncatedData
-          } = docs.toObject();
-          const alertObj = {
-            uuid,
-            start_time: start_time,
-            end_time,
-            event_title: `${activity_category}: ${note}`,
-            reminder_time,
-            alert_time_code,
-            event_id: truncatedData._id
-          };
-          if (alert_time_code !== "none") {
-            eventAlerts.create(alertObj, (err, alertData) => {
-              if (err) {
-                return res
-                  .status(400)
-                  .json({ status: "error", message: err.message });
+  await userEvents.find({ uuid }, async (error, allevents) => {
+    if (!error) {
+      var timeExists = checkExistingDuration(allevents, start_time, end_time);
+      if (timeExists) {
+        return res.send({
+          status: "error",
+          message: `You can't create an event within an existing event timeline.`
+        });
+      } else {
+        if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
+          try {
+            await userEvents.create(data, (err, docs) => {
+              if (err)
+                res.status(400).json({ status: "error", message: err.message });
+              else {
+                const {
+                  uuid,
+                  alert_time,
+                  repeat_time,
+                  last_updated_on,
+                  description,
+                  name,
+                  ...truncatedData
+                } = docs.toObject();
+                const alertObj = {
+                  uuid,
+                  start_time: start_time,
+                  end_time,
+                  event_title: `${activity_category}: ${note}`,
+                  reminder_time,
+                  alert_time_code,
+                  event_id: truncatedData._id
+                };
+                if (alert_time_code !== "none") {
+                  eventAlerts.create(alertObj, (err, alertData) => {
+                    if (err) {
+                      return res
+                        .status(400)
+                        .json({ status: "error", message: err.message });
+                    }
+                    return res.send({
+                      status: "success",
+                      data: truncatedData,
+                      alertData,
+                      message: "details added successfully"
+                    });
+                  });
+                } else {
+                  return res.send({
+                    status: "success",
+                    data: truncatedData,
+                    message: "details added successfully"
+                  });
+                }
               }
-              return res.send({
-                status: "success",
-                data: truncatedData,
-                alertData,
-                message: "details added successfully"
-              });
             });
-          } else {
-            return res.send({
-              status: "success",
-              data: truncatedData,
-              message: "details added successfully"
-            });
+            // }
+          } catch (error) {
+            res
+              .status(400)
+              .json({ status: "error", message: "Invalid details" });
           }
+        } else {
+          return res.status(404).send({
+            status: "error",
+            message: "Event end date cannot be earlier than the start date"
+          });
         }
-      });
-      // }
-    } catch (error) {
-      res.status(400).json({ status: "error", message: "Invalid details" });
+      }
     }
-  } else {
-    return res.status(404).send({
-      status: "error",
-      message: "Event end date cannot be earlier than the start date"
-    });
-  }
+  });
 });
 
 router.get("/fetch-events-notifications", (req, res) => {
