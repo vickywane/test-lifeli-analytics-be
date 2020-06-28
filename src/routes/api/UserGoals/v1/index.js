@@ -10,7 +10,7 @@ router.post("/create-goal", async (req, res) => {
     description,
     start_date,
     end_date,
-    target
+    target,
   } = req.body;
   const body = {
     uuid,
@@ -18,7 +18,7 @@ router.post("/create-goal", async (req, res) => {
     event_category_code,
     description,
     week_period: { start_date, end_date },
-    target
+    target,
   };
   const savedgoal = new goalsModel(body);
   await savedgoal
@@ -43,12 +43,12 @@ router.post("/edit-goal", (req, res) => {
     if (err) {
       return res.status(400).send({
         status: "error",
-        message: "Sorry. We are unable to find this user"
+        message: "Sorry. We are unable to find this user",
       });
     } else {
       return res.send({
         status: "success",
-        data
+        data,
       });
     }
   });
@@ -60,12 +60,12 @@ router.delete("/delete-goal/:goal_id", (req, res) => {
     if (err) {
       return res.status(400).send({
         status: "success",
-        message: "We can not delete this goal at this time"
+        message: "An error occurred. We can't delete this item",
       });
     }
     return res.send({
       status: "success",
-      message: "You have successfully deleted this goal"
+      message: "You have successfully removed this goal",
     });
   });
   //   res.send(req.params);
