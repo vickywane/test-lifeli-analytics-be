@@ -11,8 +11,23 @@ const moment = extendMoment(Moment);
 import userEvents from "../../../../models/userEvents";
 import eventAlerts from "../../../../models/eventAlerts";
 
+const getEventsForDay = (allevents, startdate) => {
+  return allevents.filter((e) =>
+    moment(e.time_schedule.start_time).isSame(moment(startdate), "day")
+  );
+};
+
 const checkExistingDuration = (allevents, startdate, enddate) => {
-  var check = allevents.find((event) => {
+  //Only check and use a subset of events that fall within the same day as the new event
+  //instead of running comparison on all the users events
+  //Note:: all events that span multiple nights and getting to this function will
+  //fall within same day due to split of events that happen on the frontend app before hitting
+  //this endpoint.
+
+  // console.time("eventDurationCheck");
+  var eventsByDay = getEventsForDay(allevents, startdate);
+
+  var check = eventsByDay.find((event) => {
     const startplusone = moment(startdate).add(1, "second");
     const endminusone = moment(enddate).subtract(1, "second");
     const range1 = moment.range(startplusone, endminusone);
@@ -23,6 +38,7 @@ const checkExistingDuration = (allevents, startdate, enddate) => {
     return range1.overlaps(range2);
   });
   // console.log(check);
+  // console.timeEnd("eventDurationCheck")
   return check;
 };
 
@@ -86,71 +102,73 @@ router.post("/add-event", async (req, res) => {
 
   await userEvents.find({ uuid }, async (error, allevents) => {
     if (!error) {
-      // var timeExists = checkExistingDuration(allevents, start_time, end_time);
-      // if (timeExists) {
-      //   return res.send({
-      //     status: "error",
-      //     message: `You can't create an event within an existing event timeline.`
-      //   });
-      // } else {
-      if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
-        try {
-          await userEvents.create(data, (err, docs) => {
-            if (err)
-              res.status(400).json({ status: "error", message: err.message });
-            else {
-              const {
-                uuid,
-                alert_time,
-                repeat_time,
-                last_updated_on,
-                description,
-                name,
-                ...truncatedData
-              } = docs.toObject();
-              const alertObj = {
-                uuid,
-                start_time: start_time,
-                end_time,
-                event_title: `${activity_category}: ${note}`,
-                reminder_time,
-                alert_time_code,
-                event_id: truncatedData._id,
-              };
-              if (alert_time_code !== "none") {
-                eventAlerts.create(alertObj, (err, alertData) => {
-                  if (err) {
-                    return res
-                      .status(400)
-                      .json({ status: "error", message: err.message });
-                  }
+      var timeExists = checkExistingDuration(allevents, start_time, end_time);
+      if (timeExists) {
+        return res.send({
+          status: "error",
+          message: `You can't create an event within an existing event timeline.`,
+        });
+      } else {
+        if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
+          try {
+            await userEvents.create(data, (err, docs) => {
+              if (err)
+                res.status(400).json({ status: "error", message: err.message });
+              else {
+                const {
+                  uuid,
+                  alert_time,
+                  repeat_time,
+                  last_updated_on,
+                  description,
+                  name,
+                  ...truncatedData
+                } = docs.toObject();
+                const alertObj = {
+                  uuid,
+                  start_time: start_time,
+                  end_time,
+                  event_title: `${activity_category}: ${note}`,
+                  reminder_time,
+                  alert_time_code,
+                  event_id: truncatedData._id,
+                };
+                if (alert_time_code !== "none") {
+                  eventAlerts.create(alertObj, (err, alertData) => {
+                    if (err) {
+                      return res
+                        .status(400)
+                        .json({ status: "error", message: err.message });
+                    }
+                    return res.send({
+                      status: "success",
+                      data: truncatedData,
+                      alertData,
+                      message: "details added successfully",
+                    });
+                  });
+                } else {
                   return res.send({
                     status: "success",
                     data: truncatedData,
-                    alertData,
                     message: "details added successfully",
                   });
-                });
-              } else {
-                return res.send({
-                  status: "success",
-                  data: truncatedData,
-                  message: "details added successfully",
-                });
+                }
               }
-            }
+            });
+            // }
+          } catch (error) {
+            res
+              .status(400)
+              .json({ status: "error", message: "Invalid details" });
+          }
+        } else {
+          return res.status(404).send({
+            status: "error",
+            message: "Event end date cannot be earlier than the start date",
           });
-          // }
-        } catch (error) {
-          res.status(400).json({ status: "error", message: "Invalid details" });
         }
-      } else {
-        return res.status(404).send({
-          status: "error",
-          message: "Event end date cannot be earlier than the start date",
-        });
       }
-      // }
     }
   });
 });
