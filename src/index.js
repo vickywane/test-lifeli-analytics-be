@@ -32,11 +32,13 @@ mongoose
   .connect(`${MONGO_URI}`, {
     useNewUrlParser: true,
     useFindAndModify: false,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
   })
-  .then(() => console.log("mongodb connected"))
+  .then(() => console.log("🥰 mongodb connected 🥰 "))
   .catch(() =>
-    console.log(`We are unable to connect to the mongo db ${MONGO_URI}`)
+    console.log(
+      "========== 😢 We are unable to connect to the mongo db 😢 =========="
+    )
   );
 
 app.use(cors());
