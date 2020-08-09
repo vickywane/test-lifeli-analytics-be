@@ -17,6 +17,9 @@ import usergoals from "./routes/api/UserGoals/v1";
 import webadmin from "./routes/api/web";
 import { createUserReminder } from "./schedules";
 
+import userOnboardingSurvey from './routes/api/UserOnboarding/'
+
+
 dotenv.config();
 
 const app = express();
@@ -61,6 +64,9 @@ app.use("/api/v1", userevents);
 app.use("/api/v2", usereventsv2);
 app.use("/api/v1", usergoals);
 app.use("/api/v1/admin", webadmin);
+
+app.use("/api/v1", userOnboardingSurvey);
+
 
 app.use((req, res) => {
   res.send({ status: "error", message: "Page not found" });
