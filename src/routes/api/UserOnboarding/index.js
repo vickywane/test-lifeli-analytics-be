@@ -5,7 +5,7 @@ import User from "../../../models/user";
 const router = express.Router();
 
 router.post("/user-onboarding-survey", async (req, res) => {
-  const { userId, isCompleted, walkthroughs } = req.body;
+  const { userId, isCompleted, walkthroughs} = req.body;
 
   const body = {
     userId,
@@ -13,10 +13,14 @@ router.post("/user-onboarding-survey", async (req, res) => {
     walkthroughs,
   };
 
-  User.findOne({ uuid: userId }).then((err) => {
+  User.findOne({ uuid: userId }).lean()
+   .then((err) => {
     if (err) {
       res.send("User not found").status(422);
     }
+   .catch(e => {
+	console.log(`Am Error Occurred while searching for user. Error: ${e}`)
+   })
   });
 
   const userOnboardSurvey = new userOnboardingSurvey(body);
