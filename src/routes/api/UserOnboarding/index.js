@@ -18,9 +18,8 @@ router.post("/user-onboarding-survey", async (req, res) => {
     if (err) {
       res.send("User not found").status(422);
     }
-   .catch(e => {
-	console.log(`Am Error Occurred while searching for user. Error: ${e}`)
-   })
+   }).catch(e => {
+  console.log(`Am Error Occurred while searching for user. Error: ${e}`)
   });
 
   const userOnboardSurvey = new userOnboardingSurvey(body);
