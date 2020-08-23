@@ -5,15 +5,15 @@ import User from "../../../models/user";
 const router = express.Router();
 
 router.post("/user-onboarding-survey", async (req, res) => {
-  const { userId, isCompleted, walkthroughs} = req.body;
+  const { userId, hasTakenSurvey,  surveys} = req.body;
 
   const body = {
     userId,
-    isCompleted,
-    walkthroughs,
-  };
-
-  User.findOne({ uuid: userId }).lean()
+    hasTakenSurvey,
+    surveys,
+  };  
+ 
+  User.findOne({ id: userId }).lean()
    .then((err) => {
     if (err) {
       res.send("User not found").status(422);
@@ -29,5 +29,21 @@ router.post("/user-onboarding-survey", async (req, res) => {
     .then((data) => res.send({ status: "success", data }))
     .catch((err) => res.status(400).send({ status: "error", message: err }));
 });
+
+router.post("/get-survey-status", (req, res) => {
+  const { userId } = req.body;
+
+  userOnboardingSurvey.findOne({ id: userId }).lean()
+   .then((data, err) => {
+    if (err) {
+      res.send("User not found").status(422);
+    }
+     
+    res.send({  status : "success" ,  hasTakenSurvey : data.hasTakenSurvey }).status(200)
+   }).catch(e => {
+     res.status(400).send({ status: "error", message: err })
+  });
+});
+
 
 export default router;

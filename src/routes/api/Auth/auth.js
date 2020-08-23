@@ -38,9 +38,11 @@ router.post("/register", async (req, res) => {
       .status(400)
       .send({ status: "error", message: "email is invalid" });
   } else {
-    await Management.createUser(data)
+
+   await Management.createUser(data)
       .then(async (data) => {
         // res.json(data);
+
         const uuid = data.identities[0].user_id;
         try {
           await User.create({ uuid, name: data.name }).then(() => {
@@ -63,7 +65,9 @@ router.post("/register", async (req, res) => {
             .send({ status: "error", message: "Unable to save user" });
         }
       })
-      .catch((err) => res.send({ status: "error", message: err.message }));
+      .catch((err) => {
+
+             res.send({ status: "error", message: err.message })});
   }
 });
 
@@ -97,7 +101,6 @@ router.post("/login", (req, res) => {
     if (device) {
       // sendMail(mailData);
     }
-    res.send({ status: "success", message: userData });
   });
 });
 
