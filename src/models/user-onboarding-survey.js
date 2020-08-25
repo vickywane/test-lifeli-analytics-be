@@ -6,8 +6,13 @@ const { Schema, model } = mongoose;
 // can i just create one model instead of 10. the payload would contain 10 objects and populate them
 const userOnboardingSurveySchema = {
   uuid: String,
+  userId : {
+    required : true , 
+    type : String
+  } , 
   hasTakenSurvey: {
     type: Boolean,
+    required : true , 
     default: false,
   },
   onboardingCompeletionDate: {

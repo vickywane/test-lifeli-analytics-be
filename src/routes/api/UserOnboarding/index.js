@@ -30,10 +30,10 @@ router.post("/user-onboarding-survey", async (req, res) => {
     .catch((err) => res.status(400).send({ status: "error", message: err }));
 });
 
-router.post("/get-survey-status", (req, res) => {
+router.get("/get-survey-status", (req, res) => {
   const { userId } = req.body;
 
-  userOnboardingSurvey.findOne({ id: userId }).lean()
+  userOnboardingSurvey.findOne({ userId : userId }).lean()
    .then((data, err) => {
     if (err) {
       res.send("User not found").status(422);
