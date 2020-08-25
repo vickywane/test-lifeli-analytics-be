@@ -38,8 +38,7 @@ router.post("/register", async (req, res) => {
       .status(400)
       .send({ status: "error", message: "email is invalid" });
   } else {
-
-   await Management.createUser(data)
+    await Management.createUser(data)
       .then(async (data) => {
         // res.json(data);
 
@@ -66,8 +65,8 @@ router.post("/register", async (req, res) => {
         }
       })
       .catch((err) => {
-
-             res.send({ status: "error", message: err.message })});
+        res.send({ status: "error", message: err.message });
+      });
   }
 });
 
@@ -101,6 +100,7 @@ router.post("/login", (req, res) => {
     if (device) {
       // sendMail(mailData);
     }
+    res.send({ status: "success", message: userData });
   });
 });
 
