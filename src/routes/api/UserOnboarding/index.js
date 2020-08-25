@@ -1,6 +1,7 @@
 import express from "express";
 import userOnboardingSurvey from "../../../models/user-onboarding-survey";
 import User from "../../../models/user";
+import user from "../../../models/user";
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.post("/user-onboarding-survey", async (req, res) => {
 });
 
 router.get("/get-survey-status", (req, res) => {
-  const { userId } = req.body;
+  const { userId } = req.query;
 
   userOnboardingSurvey.findOne({ userId : userId }).lean()
    .then((data, err) => {
@@ -41,7 +42,7 @@ router.get("/get-survey-status", (req, res) => {
      
     res.send({  status : "success" ,  hasTakenSurvey : data.hasTakenSurvey }).status(200)
    }).catch(e => {
-     res.status(400).send({ status: "error", message: err })
+     res.status(204).send({ status: "user not found", message: e })
   });
 });
 
