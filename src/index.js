@@ -17,6 +17,7 @@ import usergoals from "./routes/api/UserGoals/v1";
 import webadmin from "./routes/api/web";
 import { createUserReminder } from "./schedules";
 
+import userIntegrations from './routes/api/User/userIntegrations'
 import userOnboardingSurvey from './routes/api/UserOnboarding/'
 
 
@@ -66,6 +67,7 @@ app.use("/api/v1", usergoals);
 app.use("/api/v1/admin", webadmin);
 
 app.use("/api/v1", userOnboardingSurvey);
+app.use("/api/v1", userIntegrations);
 
 
 app.use((req, res) => {

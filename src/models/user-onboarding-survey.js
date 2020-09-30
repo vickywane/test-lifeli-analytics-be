@@ -28,7 +28,8 @@ const userOnboardingSurveySchema = {
         user_onboarding_name: String,
         user_onboarding_score: String,
       },
-    ],}
+    ],
+  }
 };
 
 export default model("UserOnboardingSurvey", userOnboardingSurveySchema);

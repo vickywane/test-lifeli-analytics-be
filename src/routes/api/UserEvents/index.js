@@ -13,6 +13,7 @@ const router = express.Router();
 // Author -Andrew Bamidele
 // Date - 14/12/2019
 router.post("/add-event", async (req, res) => {
+  console.log("add evemnt")
   const {
     uuid,
     note,
