@@ -47,7 +47,7 @@ app.post("/add-user-integration", async (req, res) => {
 
 app.post("/update-integration/:user_id/:id", async (req, res) => {
   const { id, user_id } = req.params;
-
+  
   user
     .findOne({ id: user_id })
     .lean()
@@ -57,8 +57,6 @@ app.post("/update-integration/:user_id/:id", async (req, res) => {
       }
     })
     .catch((e) => console.log(e));
-
-console.log(req.body);
 
   Integrations.findByIdAndUpdate(
     id,
