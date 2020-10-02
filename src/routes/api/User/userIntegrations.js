@@ -58,12 +58,12 @@ app.post("/update-integration/:user_id/:id", async (req, res) => {
     })
     .catch((e) => console.log(e));
 
-console.log(req.body.data);
+console.log(req.body);
 
   Integrations.findByIdAndUpdate(
     id,
     {
-      $set: req.body.data,
+      $set: req.body,
     },
     (err, data) => {
       if (err) {
