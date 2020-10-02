@@ -61,10 +61,7 @@ app.post("/update-integration/:user_id/:id", async (req, res) => {
   Integrations.findByIdAndUpdate(
     id,
     {
-      $set: {
-        last_synced: new Date(),
-        autosync_enabled: false,
-      },
+      $set: req.body,
     },
     (err, data) => {
       if (err) {
