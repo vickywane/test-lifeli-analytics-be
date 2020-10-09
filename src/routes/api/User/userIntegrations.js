@@ -47,7 +47,7 @@ app.post("/add-user-integration", async (req, res) => {
 
 app.post("/update-integration/:user_id/:id", async (req, res) => {
   const { id, user_id } = req.params;
-  const { autosync_enabled, deviceName } = req.body;
+  const { autosync_enabled, device_type } = req.body;
 
   user
     .findOne({ id: user_id })
@@ -65,7 +65,7 @@ app.post("/update-integration/:user_id/:id", async (req, res) => {
       $set: {
         last_synced: new Date(),
         autosync_enabled: autosync_enabled,
-        deviceName: deviceName,
+        device_type: device_type,
       },
     },
     (err, data) => {
