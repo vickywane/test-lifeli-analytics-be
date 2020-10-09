@@ -1,6 +1,8 @@
 import express from "express";
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
+import * as Lodash from "lodash";
+import { update } from "lodash";
 
 const app = express.Router();
 
@@ -47,6 +49,12 @@ app.post("/add-user-integration", async (req, res) => {
 
 app.post("/update-integration/:user_id/:id", async (req, res) => {
   const { id, user_id } = req.params;
+  const { autosync_enabled, deviceName } = req.body;
+  console.log(autosync_enabled , deviceName);
+  const updateData = Lodash.omitBy({
+    device_type: deviceName,
+    autosync_enabled: autosync_enabled,
+  });
 
   user
     .findOne({ id: user_id })
@@ -63,14 +71,14 @@ app.post("/update-integration/:user_id/:id", async (req, res) => {
     {
       $set: {
         last_synced: new Date(),
-        autosync_enabled: false,
+        ...updateData,
       },
     },
     (err, data) => {
       if (err) {
         res.status(404).send("could not find user's integration");
       }
-      res.status(200).send(data);
+      res.status(200).send({ status: "SUCCESS", data });
     }
   ).lean();
 });
