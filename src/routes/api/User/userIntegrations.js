@@ -25,8 +25,6 @@ app.get("/get-integrations/:userId", (req, res) => {
 });
 
 app.post("/add-user-integration", async (req, res) => {
-  console.log(req.body);
-
   user
     .findOne({ id: req.body.user_id })
     .lean()
