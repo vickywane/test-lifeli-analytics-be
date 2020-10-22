@@ -1,5 +1,6 @@
 import express from "express";
 import moment from "moment";
+import path from "path";
 
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
@@ -54,6 +55,7 @@ app.get("/add-google-calendar", (req, res) => {
     scope: scopes,
     prompt: "consent",
   });
+  console.log(consentLink);
 
   if (req.query.code) {
     console.log(code);
@@ -69,7 +71,7 @@ app.get("/add-google-calendar", (req, res) => {
     });
   }
 
-  res.status(200).send(consentLink);
+  res.sendFile(path.join(__dirname + "/success.html"));
 });
 
 app.get("/get-calendars/:integrationId", (req, res) => {
