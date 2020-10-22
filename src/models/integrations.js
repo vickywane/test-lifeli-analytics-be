@@ -17,6 +17,9 @@ const integrationSchema = new Schema({
     type: Date,
     default: new Date(),
   },
+  google_calendar_token: {
+    type: String,
+  },
   sync_status: String,
   reason_for_failure: "",
   device_type: {
