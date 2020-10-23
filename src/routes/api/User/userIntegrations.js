@@ -25,20 +25,22 @@ const scopes = [
 ];
 
 const Calendars = [
-  "Career-Development",
-  "Errand",
-  "Fitness",
-  "Personal Development",
-  "Relationship",
-  "Selfcare",
-  "Sleep",
-  "Spiritual",
-  "Travel",
-  "Work and Business",
+  "Li-Career-Development",
+  "Li-Errand",
+  "Li-Fitness",
+  "Li-Personal Development",
+  "Li-Relationship",
+  "Li-Selfcare",
+  "Li-Sleep",
+  "Li-Spiritual",
+  "Li-Travel",
+  "Li-Work and Business",
 ];
 
 // CALENDAR INTEGRATION
 app.get("/add-google-calendar", (req, res) => {
+  // USER
+
   let code = "";
   code = req.query.code;
 
@@ -57,6 +59,8 @@ app.get("/add-google-calendar", (req, res) => {
   });
   console.log(consentLink);
 
+  // PROBLEM :- SAVE TOKEN UNDR
+
   if (req.query.code) {
     console.log(code);
     AuthClient.getToken(code).then(({ tokens }) => {
@@ -69,9 +73,11 @@ app.get("/add-google-calendar", (req, res) => {
         }
       ).lean();
     });
+
+    res.sendFile(path.join(__dirname + "/success.html"));
   }
 
-  res.sendFile(path.join(__dirname + "/success.html"));
+  res.status(200).send(consentLink);
 });
 
 app.get("/get-calendars/:integrationId", (req, res) => {
@@ -229,13 +235,16 @@ app.post("/add-user-integration", async (req, res) => {
       }
     })
     .catch((e) => console.log(e));
-
+         
   const integration = new Integrations(req.body);
 
   await integration
     .save()
     .then((data) => res.status(200).send(data))
-    .catch((e) => res.status(422).send(`an error occured ${e}`));
+    .catch((e) => {
+      console.log(e);
+      res.status(422).send(`an error occured ${e}`);
+    });
 });
 
 app.post("/update-integration/:user_id/:id", async (req, res) => {
