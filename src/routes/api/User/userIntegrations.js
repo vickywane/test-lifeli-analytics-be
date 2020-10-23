@@ -49,7 +49,7 @@ app.get("/add-google-calendar", (req, res) => {
   const oAuth2Client = new OAuth2(
     CLIENT_ID,
     CLIENT_SECRET,
-    "http://localhost:5000/api/v1/add-google-calendar"
+    "https://test-lifeli-analytics-be.herokuapp.com/api/v1/add-google-calendar"
   );
 
   const consentLink = oAuth2Client.generateAuthUrl({
@@ -127,7 +127,7 @@ app.get("/get-events/:integrationId", (req, res) => {
 });
 
 app.get("/create-calendars/:integrationId", (req, res) => {
-  const { integrationId } = req.params;
+  const { integrationId } = req.params;  
 
   Integrations.findById(integrationId, (err, data) => {
     if (err) res.status(404).send(err);
