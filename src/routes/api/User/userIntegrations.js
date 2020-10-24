@@ -1,20 +1,17 @@
+require("dotenv").config();
 import express from "express";
-import moment from "moment";
 import path from "path";
 
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
-import { google } from "googleapis";
+import { Auth, google } from "googleapis";
 
 const app = express.Router();
 
-const CLIENT_SECRET = "xSr1dPwnvyDcBL2PmhZDFAAV";
-const CLIENT_ID =
-  "649885202773-ijqmj936o916cep5ftil4be9umr1amsn.apps.googleusercontent.com";
 const AuthClient = new google.auth.OAuth2(
-  CLIENT_ID,
-  CLIENT_SECRET,
-  "http://localhost:5000/api/v1/add-google-calendar"
+  process.env.CALENDAR_CLIENT_ID,
+  process.env.CALENDAR_CLIENT_SECRET,
+  process.env.CALENDAR_CALLBACK_URI
 );
 const scopes = [
   "https://www.googleapis.com/auth/calendar.events",
@@ -24,7 +21,7 @@ const scopes = [
   "https://www.googleapis.com/auth/calendar.settings.readonly",
 ];
 
-const Calendars = [
+const LifeliCalendars = [
   "Li-Career-Development",
   "Li-Errand",
   "Li-Fitness",
@@ -37,35 +34,30 @@ const Calendars = [
   "Li-Work and Business",
 ];
 
-// CALENDAR INTEGRATION
+// CALENDAR INTEGRATION ======================>
+
+// this route is hit twice during the integration process.
+// First to generate the Auth url ( consent link )
+// Second as a callback_uri to get a token using the injected authorization_code
 app.get("/add-google-calendar", (req, res) => {
-  // USER
-
-  let code = "";
-  code = req.query.code;
-
-  const { OAuth2 } = google.auth;
-
-  const oAuth2Client = new OAuth2(
-    CLIENT_ID,
-    CLIENT_SECRET,
-    "https://test-lifeli-analytics-be.herokuapp.com/api/v1/add-google-calendar"
-  );
-
-  const consentLink = oAuth2Client.generateAuthUrl({
-    access_type: "offline",
+  const consentLink = AuthClient.generateAuthUrl({
+    access_type: "offline", // required to get refresh_token
     scope: scopes,
     prompt: "consent",
   });
-  console.log(consentLink);
 
-  // PROBLEM :- SAVE TOKEN UNDR
+  // generates the consent link sent to and opened from the app
 
+  // console.log(consentLink); ===> uncomment to use or make a request to this endpoint
   if (req.query.code) {
-    console.log(code);
-    AuthClient.getToken(code).then(({ tokens }) => {
+    AuthClient.getToken(req.query.code).then(({ tokens }) => {
+      // You need to save this manually for now
+      console.log(tokens.refresh_token);
+
+      // PROBLEM :- SAVE REFRESH_TOKEN UNDER THE USER WHO INITIATED THE PROCESS
+      // FOR SUBSEQUENT REQUEST TO THIS SERVICE
       Integrations.findOneAndUpdate(
-        { user_id: userId },
+        { user_id: req.query.userId },
         {
           $set: {
             google_calendar_token: tokens.refresh_token,
@@ -77,9 +69,37 @@ app.get("/add-google-calendar", (req, res) => {
     res.sendFile(path.join(__dirname + "/success.html"));
   }
 
-  res.status(200).send(consentLink);
+  // it still hits the line even though the request lifespan should end above when the callback_uri has a code
+  if (!req.query.code) {
+    res.status(200).send(consentLink);
+  }
 });
 
+app.post("/delete-event/:integrationId", (req, res) => {
+  const { integrationId } = req.params;
+  const { calendarId, eventId } = req.body;
+
+  Integrations.findById(integrationId, (err, data) => {
+    if (err) {
+      res.status(404).send(err);
+    }
+
+    AuthClient.setCredentials({
+      refresh_token: data.google_calendar_token,
+    });
+
+    // i might have to delete an event using the event name from here not the app
+    // first pull all events => search for the event by name 
+    // delete the event using it's id
+    google
+      .calendar({ version: "v3", auth: AuthClient })
+      .events.delete({ calendarId: calendarId, eventId: eventId })
+      .then((deleteResponse) => res.status(200).send(deleteResponse))
+      .catch((error) => res.status(500).send(error));
+  }).lean();
+});
+
+// i might merge this route with `get-events` route later
 app.get("/get-calendars/:integrationId", (req, res) => {
   const { integrationId } = req.params;
 
@@ -116,24 +136,37 @@ app.get("/get-events/:integrationId", (req, res) => {
 
     google
       .calendar({ version: "v3", auth: AuthClient })
-      .events.list({
-        calendarId: "2rlnjhb6j5lm3oa2i7qcvoj2ro@group.calendar.google.com",
-      })
+      .calendarList.list()
       .then((calendars) => {
-        res.status(200).send(calendars.data);
+        calendars.data.items.forEach((item) => {
+          google
+            .calendar({ version: "v3", auth: AuthClient })
+            .events.list({
+              calendarId: item.id,
+            })
+            .then((eventResult) => {
+              // Filters out calendars not for lifeli app
+              if (LifeliCalendars.includes(eventResult.data.summary)) {
+                // sends back only lifeli related events
+                res.status(200).send(eventResult.data.items);
+              }
+            })
+            .catch((e) => res.status(404).send(`Error : ${e}`));
+        });
       })
-      .catch((e) => res.status(404).send(`Error : ${e}`));
+      .catch((e) => res.status(404).send(e));
   }).lean();
 });
 
-app.get("/create-calendars/:integrationId", (req, res) => {
-  const { integrationId } = req.params;  
+app.post("/create-calendars/:integrationId", (req, res) => {
+  const { integrationId } = req.params;
+  const { timezone, location } = req.body;
 
   Integrations.findById(integrationId, (err, data) => {
     if (err) res.status(404).send(err);
     AuthClient.setCredentials({ refresh_token: data.google_calendar_token });
 
-    Calendars.forEach((name) => {
+    LifeliCalendars.forEach((name) => {
       google
         .calendar({ version: "v3", auth: AuthClient })
         .calendars.insert({
@@ -141,9 +174,9 @@ app.get("/create-calendars/:integrationId", (req, res) => {
             description: name,
             etag: "",
             kind: "calendar#calendar",
-            location: "Lagos",
+            location: location,
             summary: name,
-            timeZone: "Africa/Lagos",
+            timeZone: timezone,
           },
         })
         .then((response) => res.status(200).send(response.data))
@@ -178,14 +211,14 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
       .events.insert({
         calendarId: "2rlnjhb6j5lm3oa2i7qcvoj2ro@group.calendar.google.com",
         requestBody: {
-          colorId: "5",
-          description: "A test sleep event",
+          colorId: colorId,
+          description: description,
           end: {
-            dateTime: moment(new Date()).add(45, "minutes"),
+            dateTime: endTime,
           },
           etag: "00000000000000000000",
           kind: "calendar#event",
-          location: "Lagos",
+          location: location,
           recurringEventId: "my_recurringEventId",
           sequence: 0,
           source: {
@@ -193,10 +226,10 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
             url: "https://liferithms.com",
           },
           start: {
-            dateTime: moment(new Date()),
+            dateTime: startTime,
           },
-          status: "confirmed",
-          summary: "test event",
+          status: status,
+          summary: summary,
         },
       })
       .then((result) => res.status(200).send(result.data))
@@ -235,7 +268,7 @@ app.post("/add-user-integration", async (req, res) => {
       }
     })
     .catch((e) => console.log(e));
-         
+
   const integration = new Integrations(req.body);
 
   await integration
