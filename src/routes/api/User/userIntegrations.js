@@ -89,7 +89,7 @@ app.post("/delete-event/:integrationId", (req, res) => {
     });
 
     // i might have to delete an event using the event name from here not the app
-    // first pull all events => search for the event by name 
+    // first pull all events => search for the event by name
     // delete the event using it's id
     google
       .calendar({ version: "v3", auth: AuthClient })
@@ -197,6 +197,7 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
     });
 
     const {
+      calendarId,
       colorId,
       description,
       endTime,
@@ -209,7 +210,7 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
     google
       .calendar({ version: "v3", auth: AuthClient })
       .events.insert({
-        calendarId: "2rlnjhb6j5lm3oa2i7qcvoj2ro@group.calendar.google.com",
+        calendarId: calendarId,
         requestBody: {
           colorId: colorId,
           description: description,
