@@ -56,6 +56,8 @@ app.get("/add-google-calendar", (req, res) => {
 
       // PROBLEM :- SAVE REFRESH_TOKEN UNDER THE USER WHO INITIATED THE PROCESS
       // FOR SUBSEQUENT REQUEST TO THIS SERVICE
+
+      // TODO : create the calendars from here
       Integrations.findOneAndUpdate(
         { user_id: req.query.userId },
         {
@@ -138,21 +140,38 @@ app.get("/get-events/:integrationId", (req, res) => {
       .calendar({ version: "v3", auth: AuthClient })
       .calendarList.list()
       .then((calendars) => {
-        calendars.data.items.forEach((item) => {
-          google
-            .calendar({ version: "v3", auth: AuthClient })
-            .events.list({
-              calendarId: item.id,
-            })
-            .then((eventResult) => {
-              // Filters out calendars not for lifeli app
-              if (LifeliCalendars.includes(eventResult.data.summary)) {
-                // sends back only lifeli related events
-                res.status(200).send(eventResult.data.items);
-              }
-            })
-            .catch((e) => res.status(404).send(`Error : ${e}`));
-        });
+        const events = [];
+
+        for (let i = 0; i < calendars.data.items.length; i++) {
+          Promise.all(
+            google
+              .calendar({ version: "v3", auth: AuthClient })
+              .events.list({
+                calendarId: calendars.data.items[i].id,
+              })
+              .then((eventResult) => {
+                // Filters out calendars not for lifeli app
+
+                console.log(i, calendars.data.items.length);
+
+                if (LifeliCalendars.includes(eventResult.data.summary)) {
+                  console.log(eventResult.data.items);
+                  events.push(eventResult.data.items);
+                }
+              })
+              .catch((e) => res.status(404).send(`Error : ${e}`))
+          ).then(() => {
+            console.log("done");
+          });
+
+          // console.log(i, calendars.data.items.length);
+          // i have to send the result only at the end of the array / loop
+          if (i + 1 === calendars.data.items.length) {
+            // console.log(i, calendars.data.items.length);
+          }
+        }
+
+        res.status(200).send(events);
       })
       .catch((e) => res.status(404).send(e));
   }).lean();
