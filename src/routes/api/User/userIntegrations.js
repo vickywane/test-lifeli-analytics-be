@@ -5,6 +5,7 @@ import path from "path";
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
 import { Auth, google } from "googleapis";
+import Bluebird, { allSettled } from "bluebird";
 
 const app = express.Router();
 
@@ -140,34 +141,29 @@ app.get("/get-events/:integrationId", (req, res) => {
       .calendar({ version: "v3", auth: AuthClient })
       .calendarList.list()
       .then((calendars) => {
-
         const events = [];
-        console.log(calendars.data);
+        const allEvents = [];
 
         for (let i = 0; i < calendars.data.items.length; i++) {
-          google
-            .calendar({ version: "v3", auth: AuthClient })
-            .events.list({
-              calendarId: calendars.data.items[i].id,
-            })
-            .then((eventResult) => {
-              // Filters out calendars not for lifeli app
-              console.log(i , calendars.data.items.length);
+          events.push(
+            google
+              .calendar({ version: "v3", auth: AuthClient })
+              .events.list({
+                calendarId: calendars.data.items[i].id,
+              })
+              .then((eventResult) => {
+                // Filters out calendars not for lifeli app
 
-              if (LifeliCalendars.includes(eventResult.data.summary)) {
-                console.log(eventResult.data.items);
-                events.push(eventResult.data.items);
-              }
-            })
-            .catch((e) => res.status(404).send(`Error : ${e}`));
-            // console.log(i, calendars.data.items.length);
-          // i have to send the result only at the end of the array / loop
-          if (i + 1 === calendars.data.items.length) {
-            // console.log(i, calendars.data.items.length);
-          }
+                if (LifeliCalendars.includes(eventResult.data.summary)) {
+                  if (eventResult.data.items.length > 0) {
+                    allEvents.push(eventResult.data.items);
+                  }
+                }
+              })
+              .catch((e) => res.status(404).send(`Error : ${e}`))
+          );
         }
-
-        res.status(200).send(events);
+        Promise.all(events).then(() => res.status(200).send(allEvents.flat()));
       })
       .catch((e) => res.status(404).send(e));
   }).lean();
@@ -206,50 +202,66 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
     if (err) {
       res.status(404).send(err);
     }
-    const now = new Date();
+
+    const formattedName = (name) => {
+      return name.split(" ").join("-").toLocaleLowerCase();
+    };
+
     AuthClient.setCredentials({
       refresh_token: data.google_calendar_token,
     });
-
-    const {
-      calendarId,
-      colorId,
-      description,
-      endTime,
-      startTime,
-      location,
-      status,
-      summary,
-    } = req.body;
+    const event = [];
 
     google
       .calendar({ version: "v3", auth: AuthClient })
-      .events.insert({
-        calendarId: calendarId,
-        requestBody: {
-          colorId: colorId,
-          description: description,
-          end: {
-            dateTime: endTime,
-          },
-          etag: "00000000000000000000",
-          kind: "calendar#event",
-          location: location,
-          recurringEventId: "my_recurringEventId",
-          sequence: 0,
-          source: {
-            title: "Lifeli - App",
-            url: "https://liferithms.com",
-          },
-          start: {
-            dateTime: startTime,
-          },
-          status: status,
-          summary: summary,
-        },
+      .calendarList.list()
+      .then((res) => {
+        res.data.items.forEach((calendar) => {
+          if (LifeliCalendars.includes(calendar.summary)) {
+            req.body.forEach((data) => {
+              if (
+                calendar.summary.toLocaleLowerCase() ===
+                `li-${formattedName(data.event_category)}`
+              ) {
+                event.push(
+                  google
+                    .calendar({ version: "v3", auth: AuthClient })
+                    .events.insert({
+                      calendarId: calendar.id,
+                      requestBody: {
+                        colorId: "5",
+                        description: data.event_category,
+                        end: {
+                          dateTime: data.time_schedule.end_time,
+                        },
+                        etag: "00000000000000000000",
+                        kind: "calendar#event",
+                        recurringEventId: "my_recurringEventId",
+                        sequence: 0,
+                        source: {
+                          title: "Lifeli - App",
+                          url: "https://liferithms.com",
+                        },
+                        start: {
+                          dateTime: data.time_schedule.start_time,
+                        },
+                        status: data.status,
+                        summary: data.activity_category,
+                      },
+                    })
+                    .then(() => {
+                      console.log("event created");
+                    })
+                    .catch((e) => console.log(e))
+                );
+              }
+            });
+          }
+        });
+
+        Promise.all(event).then(() => res.status(200));
       })
-      .then((result) => res.status(200).send(result.data))
-      .catch((e) => res.status(500).send(e));
+      .catch((e) => {});
   }).lean();
 });
 
