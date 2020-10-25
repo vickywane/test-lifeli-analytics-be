@@ -140,31 +140,27 @@ app.get("/get-events/:integrationId", (req, res) => {
       .calendar({ version: "v3", auth: AuthClient })
       .calendarList.list()
       .then((calendars) => {
+
         const events = [];
+        console.log(calendars.data);
 
         for (let i = 0; i < calendars.data.items.length; i++) {
-          Promise.all(
-            google
-              .calendar({ version: "v3", auth: AuthClient })
-              .events.list({
-                calendarId: calendars.data.items[i].id,
-              })
-              .then((eventResult) => {
-                // Filters out calendars not for lifeli app
+          google
+            .calendar({ version: "v3", auth: AuthClient })
+            .events.list({
+              calendarId: calendars.data.items[i].id,
+            })
+            .then((eventResult) => {
+              // Filters out calendars not for lifeli app
+              console.log(i , calendars.data.items.length);
 
-                console.log(i, calendars.data.items.length);
-
-                if (LifeliCalendars.includes(eventResult.data.summary)) {
-                  console.log(eventResult.data.items);
-                  events.push(eventResult.data.items);
-                }
-              })
-              .catch((e) => res.status(404).send(`Error : ${e}`))
-          ).then(() => {
-            console.log("done");
-          });
-
-          // console.log(i, calendars.data.items.length);
+              if (LifeliCalendars.includes(eventResult.data.summary)) {
+                console.log(eventResult.data.items);
+                events.push(eventResult.data.items);
+              }
+            })
+            .catch((e) => res.status(404).send(`Error : ${e}`));
+            // console.log(i, calendars.data.items.length);
           // i have to send the result only at the end of the array / loop
           if (i + 1 === calendars.data.items.length) {
             // console.log(i, calendars.data.items.length);
