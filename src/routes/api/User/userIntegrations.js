@@ -144,12 +144,12 @@ app.get("/get-events/:integrationId", (req, res) => {
         const events = [];
         const allEvents = [];
 
-        for (let i = 0; i < calendars.data.items.length; i++) {
+        calendars.data.items.forEach((calendar) => {
           events.push(
             google
               .calendar({ version: "v3", auth: AuthClient })
               .events.list({
-                calendarId: calendars.data.items[i].id,
+                calendarId: calendar.id,
               })
               .then((eventResult) => {
                 // Filters out calendars not for lifeli app
@@ -162,7 +162,8 @@ app.get("/get-events/:integrationId", (req, res) => {
               })
               .catch((e) => res.status(404).send(`Error : ${e}`))
           );
-        }
+        });
+
         Promise.all(events).then(() => res.status(200).send(allEvents.flat()));
       })
       .catch((e) => res.status(404).send(e));
@@ -215,8 +216,8 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
     google
       .calendar({ version: "v3", auth: AuthClient })
       .calendarList.list()
-      .then((res) => {
-        res.data.items.forEach((calendar) => {
+      .then((result) => {
+        result.data.items.forEach((calendar) => {
           if (LifeliCalendars.includes(calendar.summary)) {
             req.body.forEach((data) => {
               if (
@@ -229,7 +230,7 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
                     .events.insert({
                       calendarId: calendar.id,
                       requestBody: {
-                        colorId: "5",
+                        colorId: "6",
                         description: data.event_category,
                         end: {
                           dateTime: data.time_schedule.end_time,
@@ -252,14 +253,16 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
                     .then(() => {
                       console.log("event created");
                     })
-                    .catch((e) => console.log(e))
+                    .catch((e) => res.status(500).send(e))
                 );
               }
             });
           }
         });
 
-        Promise.all(event).then(() => res.status(200));
+        Promise.all(event).then(() =>
+          res.status(200).send({ status: "SUCCESS" })
+        );
       })
       .catch((e) => {});
   }).lean();
