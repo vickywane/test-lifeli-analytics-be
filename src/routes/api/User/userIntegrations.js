@@ -5,7 +5,7 @@ import path from "path";
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
 import { Auth, google } from "googleapis";
-import Bluebird, { allSettled } from "bluebird";
+import moment from "moment";
 
 const app = express.Router();
 
