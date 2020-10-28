@@ -128,6 +128,8 @@ app.get("/get-calendars/:integrationId", (req, res) => {
 app.get("/get-events/:integrationId", (req, res) => {
   const { integrationId } = req.params;
 
+  console.log("GET - EVENTS ENDPOINT HIT");
+
   Integrations.findById(integrationId, (err, data) => {
     if (err) {
       res.status(404).send(err);
