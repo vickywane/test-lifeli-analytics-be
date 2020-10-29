@@ -1,11 +1,13 @@
 require("dotenv").config();
 import express from "express";
 import path from "path";
+import { allSettled } from "bluebird";
 
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
 import { Auth, google } from "googleapis";
 import moment from "moment";
+import { json } from "body-parser";
 
 const app = express.Router();
 
@@ -14,6 +16,7 @@ const AuthClient = new google.auth.OAuth2(
   process.env.CALENDAR_CLIENT_SECRET,
   process.env.CALENDAR_CALLBACK_URI
 );
+
 const scopes = [
   "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/calendar.readonly",
@@ -40,36 +43,71 @@ const LifeliCalendars = [
 // this route is hit twice during the integration process.
 // First to generate the Auth url ( consent link )
 // Second as a callback_uri to get a token using the injected authorization_code
+
+// use route forwarding to get to this route
 app.get("/add-google-calendar", (req, res) => {
+  console.log("ADD GOOGLE CALENDAR ENDPOINT");
   const consentLink = AuthClient.generateAuthUrl({
     access_type: "offline", // required to get refresh_token
     scope: scopes,
     prompt: "consent",
+    state: JSON.stringify({ userId: req.query.userId }),
   });
 
   // generates the consent link sent to and opened from the app
 
-  // console.log(consentLink); ===> uncomment to use or make a request to this endpoint
   if (req.query.code) {
     AuthClient.getToken(req.query.code).then(({ tokens }) => {
-      // You need to save this manually for now
-      console.log(tokens.refresh_token);
+      // console.log("ADD GOOGLE CALENDAR ENDPOINT");
 
-      // PROBLEM :- SAVE REFRESH_TOKEN UNDER THE USER WHO INITIATED THE PROCESS
-      // FOR SUBSEQUENT REQUEST TO THIS SERVICE
+      const { userId } = JSON.parse(req.query.state);
 
       // TODO : create the calendars from here
       Integrations.findOneAndUpdate(
-        { user_id: req.query.userId },
+        { user_id: userId },
         {
           $set: {
             google_calendar_token: tokens.refresh_token,
           },
         }
-      ).lean();
-    });
+      )
+        .lean()
+        .then(() => {
+          // TODO: Check if i need to setCredentials again or i can use prev creds
+          AuthClient.setCredentials({ refresh_token: tokens.refresh_token });
+          const calendars = [];
 
-    res.sendFile(path.join(__dirname + "/success.html"));
+          // create's lifeli calendars on user's google calendar
+          // TODO: Find a way to get user's location && timezone
+
+          LifeliCalendars.forEach((name) => {
+            calendars.push(
+              google
+                .calendar({ version: "v3", auth: AuthClient })
+                .calendars.insert({
+                  requestBody: {
+                    description: name,
+                    etag: "",
+                    kind: "calendar#calendar",
+                    location: "Lagos",
+                    summary: name,
+                    timeZone: "Africa/Lagos",
+                  },
+                })
+            );
+          });
+
+          allSettled(calendars)
+            .then(() =>
+              res.status(200).sendFile(path.join(__dirname + "/success.html"))
+            )
+            .catch((e) => {
+              console.log(e , "error cerating calendars");
+              res.status(500).send(e)
+            });
+        })
+        .catch((e) => console.log(e));
+    });
   }
 
   // it still hits the line even though the request lifespan should end above when the callback_uri has a code
@@ -128,8 +166,6 @@ app.get("/get-calendars/:integrationId", (req, res) => {
 app.get("/get-events/:integrationId", (req, res) => {
   const { integrationId } = req.params;
 
-  console.log("GET - EVENTS ENDPOINT HIT");
-
   Integrations.findById(integrationId, (err, data) => {
     if (err) {
       res.status(404).send(err);
@@ -172,33 +208,6 @@ app.get("/get-events/:integrationId", (req, res) => {
   }).lean();
 });
 
-app.post("/create-calendars/:integrationId", (req, res) => {
-  const { integrationId } = req.params;
-  const { timezone, location } = req.body;
-
-  Integrations.findById(integrationId, (err, data) => {
-    if (err) res.status(404).send(err);
-    AuthClient.setCredentials({ refresh_token: data.google_calendar_token });
-
-    LifeliCalendars.forEach((name) => {
-      google
-        .calendar({ version: "v3", auth: AuthClient })
-        .calendars.insert({
-          requestBody: {
-            description: name,
-            etag: "",
-            kind: "calendar#calendar",
-            location: location,
-            summary: name,
-            timeZone: timezone,
-          },
-        })
-        .then((response) => res.status(200).send(response.data))
-        .catch((e) => res.status(500).send(e));
-    });
-  });
-});
-
 app.post("/create-calendar-event/:integrationId", (req, res) => {
   const { integrationId } = req.params;
   Integrations.findById(integrationId, (err, data) => {
@@ -214,7 +223,8 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
       refresh_token: data.google_calendar_token,
     });
     const event = [];
-
+    
+    console.log(req.body , "request body");
     google
       .calendar({ version: "v3", auth: AuthClient })
       .calendarList.list()
@@ -292,8 +302,10 @@ app.get("/get-integrations/:userId", (req, res) => {
 });
 
 app.post("/add-user-integration", async (req, res) => {
+  const { user_id } = req.body;
+
   user
-    .findOne({ id: req.body.user_id })
+    .findOne({ id: user_id })
     .lean()
     .then((err) => {
       if (err) {
@@ -306,7 +318,13 @@ app.post("/add-user-integration", async (req, res) => {
 
   await integration
     .save()
-    .then((data) => res.status(200).send(data))
+    .then((data) => {
+      // TODO: forward the route to the add-google-calendar route
+
+      // app.get(`/add-google-calendar?userId=${user_id}`)
+
+      res.status(200).send(data);
+    })
     .catch((e) => {
       console.log(e);
       res.status(422).send(`an error occured ${e}`);
