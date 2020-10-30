@@ -1,13 +1,10 @@
 require("dotenv").config();
 import express from "express";
 import path from "path";
-import { allSettled } from "bluebird";
 
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
-import { Auth, google } from "googleapis";
-import moment from "moment";
-import { json } from "body-parser";
+import { google } from "googleapis";
 
 const app = express.Router();
 
@@ -38,6 +35,66 @@ const LifeliCalendars = [
   "Li-Work and Business",
 ];
 
+const eventCategories = [
+  {
+    category_code: "work-and-business",
+  },
+  {
+    category_code: "career-development",
+  },
+  {
+    category_code: "personal-development",
+  },
+  {
+    category_code: "spiritual",
+  },
+  {
+    category_code: "fitness",
+  },
+  {
+    category_code: "relationship",
+  },
+  {
+    category_code: "self-care",
+  },
+  {
+    category_code: "sleep",
+  },
+  {
+    category_code: "travel",
+  },
+  {
+    category_code: "errand",
+  },
+];
+
+const getDefaultActivityCategory = (activity_category_code) => {
+  switch (activity_category_code) {
+    case "work-and-business":
+      return "work";
+    case "career-development":
+      return "educate";
+    case "personal-development":
+      return "learn";
+    case "spiritual":
+      return "devotion";
+    case "fitness":
+      return "training";
+    case "relationship":
+      return "connect";
+    case "self-care":
+      return "leisure";
+    case "errand":
+      return "clean";
+    case "sleep":
+      return "sleep";
+    case "travel":
+      return "drive";
+    default:
+      return "";
+  }
+};
+
 // CALENDAR INTEGRATION ======================>
 
 // this route is hit twice during the integration process.
@@ -46,7 +103,6 @@ const LifeliCalendars = [
 
 // use route forwarding to get to this route
 app.get("/add-google-calendar", (req, res) => {
-  console.log("ADD GOOGLE CALENDAR ENDPOINT");
   const consentLink = AuthClient.generateAuthUrl({
     access_type: "offline", // required to get refresh_token
     scope: scopes,
@@ -73,14 +129,14 @@ app.get("/add-google-calendar", (req, res) => {
       )
         .lean()
         .then(() => {
-          // TODO: Check if i need to setCredentials again or i can use prev creds
           AuthClient.setCredentials({ refresh_token: tokens.refresh_token });
           const calendars = [];
+          const calendarDetails = [];
 
           // create's lifeli calendars on user's google calendar
           // TODO: Find a way to get user's location && timezone
 
-          LifeliCalendars.forEach((name) => {
+          LifeliCalendars.forEach((name, index) => {
             calendars.push(
               google
                 .calendar({ version: "v3", auth: AuthClient })
@@ -94,13 +150,34 @@ app.get("/add-google-calendar", (req, res) => {
                     timeZone: "Africa/Lagos",
                   },
                 })
+                .then((calendarResponse) => {
+                  calendarDetails.push({
+                    calendar_details: calendarResponse.data.id,
+                    title: calendarResponse.data.summary,
+                    event_category: eventCategories[index].category_code,
+                    activity_category_code: getDefaultActivityCategory(
+                      eventCategories[index].category_code
+                    ),
+                  });
+                })
             );
           });
 
-          allSettled(calendars)
-            .then(() =>
-              res.status(200).sendFile(path.join(__dirname + "/success.html"))
-            )
+          Promise.all(calendars)
+            .then(() => {
+              Integrations.findOneAndUpdate(
+                { user_id: userId },
+                {
+                  $set: {
+                    calendar_details: calendarDetails,
+                  },
+                }
+              )
+                .lean()
+                .catch((e) => console.log(e, "error setting calendar ID"));
+
+              res.status(200).sendFile(path.join(__dirname + "/success.html"));
+            })
             .catch((e) => {
               console.log(e, "error cerating calendars");
               res.status(500).send(e);
@@ -323,10 +400,6 @@ app.post("/add-user-integration", async (req, res) => {
   await integration
     .save()
     .then((data) => {
-      // TODO: forward the route to the add-google-calendar route
-
-      // app.get(`/add-google-calendar?userId=${user_id}`)
-
       res.status(200).send(data);
     })
     .catch((e) => {
