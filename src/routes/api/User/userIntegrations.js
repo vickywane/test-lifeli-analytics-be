@@ -152,7 +152,7 @@ app.get("/add-google-calendar", (req, res) => {
                 })
                 .then((calendarResponse) => {
                   calendarDetails.push({
-                    calendar_details: calendarResponse.data.id,
+                    calendar_id: calendarResponse.data.id,
                     title: calendarResponse.data.summary,
                     event_category: eventCategories[index].category_code,
                     activity_category_code: getDefaultActivityCategory(
