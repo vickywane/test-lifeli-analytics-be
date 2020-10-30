@@ -163,10 +163,10 @@ app.get("/get-calendars/:integrationId", (req, res) => {
   }).lean();
 });
 
-app.get("/get-events/:integrationId", (req, res) => {
-  const { integrationId } = req.params;
+app.get("/get-events/:userId", (req, res) => {
+  const { userId } = req.params;
 
-  Integrations.findById(integrationId, (err, data) => {
+  Integrations.find({user_id : userId}, (err, data) => {
     if (err) {
       res.status(404).send(err);
     }
