@@ -102,8 +102,8 @@ app.get("/add-google-calendar", (req, res) => {
               res.status(200).sendFile(path.join(__dirname + "/success.html"))
             )
             .catch((e) => {
-              console.log(e , "error cerating calendars");
-              res.status(500).send(e)
+              console.log(e, "error cerating calendars");
+              res.status(500).send(e);
             });
         })
         .catch((e) => console.log(e));
@@ -166,13 +166,13 @@ app.get("/get-calendars/:integrationId", (req, res) => {
 app.get("/get-events/:userId", (req, res) => {
   const { userId } = req.params;
 
-  Integrations.find({user_id : userId}, (err, data) => {
+  Integrations.find({ user_id: userId }, (err, data) => {
     if (err) {
       res.status(404).send(err);
     }
 
     AuthClient.setCredentials({
-      refresh_token: data.google_calendar_token,
+      refresh_token: data[0].google_calendar_token,
     });
 
     google
@@ -198,13 +198,17 @@ app.get("/get-events/:userId", (req, res) => {
                   }
                 }
               })
-              .catch((e) => res.status(404).send(`Error : ${e}`))
+              .catch((e) => {
+                res.status(404).send(`Error : ${e}`);
+              })
           );
         });
 
         Promise.all(events).then(() => res.status(200).send(allEvents.flat()));
       })
-      .catch((e) => res.status(404).send(e));
+      .catch((e) => {
+        res.status(500).send(e);
+      });
   }).lean();
 });
 
@@ -223,8 +227,8 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
       refresh_token: data.google_calendar_token,
     });
     const event = [];
-    
-    console.log(req.body , "request body");
+
+    console.log(req.body, "request body");
     google
       .calendar({ version: "v3", auth: AuthClient })
       .calendarList.list()
