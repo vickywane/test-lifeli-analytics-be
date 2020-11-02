@@ -8,10 +8,6 @@ const integrationSchema = new Schema({
   },
   integration_id: String,
   provider: String,
-  email: {
-    type: String,
-    required: true,
-  },
   title: String,
   last_synced: {
     type: Date,

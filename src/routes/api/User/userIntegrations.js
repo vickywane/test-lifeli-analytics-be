@@ -373,7 +373,8 @@ app.get("/get-integrations/:userId", (req, res) => {
     })
     .lean();
 
-  Integrations.find({ user_id: userId }, (err, data) => {
+  Integrations.findOne({ user_id: userId }, (err, data) => {
+
     if (err) {
       res.status(404).send(`no integrations for this user`);
     }
@@ -403,7 +404,6 @@ app.post("/add-user-integration", async (req, res) => {
       res.status(200).send(data);
     })
     .catch((e) => {
-      console.log(e);
       res.status(422).send(`an error occured ${e}`);
     });
 });
@@ -413,19 +413,18 @@ app.post("/update-integration/:user_id/:id", async (req, res) => {
   const {
     autosync_enabled,
     device_type,
+    google_calendar_token,
     reason_for_failure,
     sync_status,
   } = req.body;
 
   user
-    .findOne({ id: user_id })
-    .lean()
-    .then((err) => {
+    .findOne({ id: user_id }, (err) => {
       if (err) {
         res.status(404).send(`unable to find user. Error: ${err}`);
       }
     })
-    .catch((e) => console.log(e));
+    .lean();
 
   Integrations.findByIdAndUpdate(
     id,
@@ -434,6 +433,7 @@ app.post("/update-integration/:user_id/:id", async (req, res) => {
         last_synced: new Date(),
         autosync_enabled: autosync_enabled,
         device_type: device_type,
+        google_calendar_token: google_calendar_token,
         reason_for_failure: reason_for_failure,
         sync_status: sync_status,
       },
@@ -445,6 +445,17 @@ app.post("/update-integration/:user_id/:id", async (req, res) => {
       res.status(200).send({ status: "SUCCESS", data });
     }
   ).lean();
+});
+
+app.post("/delete-integration/:userId", (req, res) => {
+  const { userId } = req.params;
+
+  Integrations.findOneAndDelete({ user_id: userId }, (err) => {
+    if (err) {
+      res.status(500).send({ error: "unable to delete data" });
+    }
+    res.status(200).send({status : "SUCCESS"})
+  }).lean();
 });
 
 export default app;
