@@ -13,10 +13,10 @@ const router = express.Router();
 // Author -Andrew Bamidele
 // Date - 14/12/2019
 router.post("/add-event", async (req, res) => {
-  console.log("add evemnt")
   const {
     uuid,
     note,
+    google_event_id , 
     start_time,
     end_time,
     hours_spent,
@@ -33,6 +33,7 @@ router.post("/add-event", async (req, res) => {
     event_category,
     event_category_code
   } = req.body;
+
   const data = {
     uuid,
     note,
@@ -54,6 +55,7 @@ router.post("/add-event", async (req, res) => {
     lat,
     lng,
     activity_category,
+    google_event_id , 
     activity_code,
     event_category,
     event_category_code,

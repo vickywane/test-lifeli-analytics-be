@@ -10,30 +10,34 @@ const userEvents = new Schema(
   {
     uuid: { type: String, ref: "User", required: true },
     name: {
-      type: String
+      type: String,
+    },
+    google_event_id: {
+      type: String,
+      default: null,
     },
     description: {
-      type: String
+      type: String,
     },
     note: {
-      type: String
+      type: String,
     },
     time_schedule: {
       start_time: { type: Date, required: true },
       end_time: { type: Date, required: true },
-      hours_spent: Number
+      hours_spent: Number,
     },
     location: String,
     lat: Number,
     lng: Number,
     alert_time: {
       text: String,
-      val: Date
+      val: Date,
     },
     repeat_time: {
       text: String,
       val: Date,
-      reoccur: String
+      reoccur: String,
     },
     activity_category: { type: String, required: true },
     event_category: { type: String, required: true },
@@ -43,16 +47,16 @@ const userEvents = new Schema(
     event_type: { type: String, enum: ["tracked", "planned"] },
     data_source: {
       type: String,
-      default: "IN_APP"
+      default: "IN_APP",
     },
     created_on: {
       type: Date,
-      default: Date.now
+      default: Date.now,
     },
     last_updated_on: {
       type: Date,
-      default: Date.now
-    }
+      default: Date.now,
+    },
   },
   { toJSON: { virtuals: true } }
 );
@@ -63,7 +67,7 @@ userEvents.virtual("_user", {
   foreignField: "uuid", // is equal to `foreignField`
   // If `justOne` is true, 'members' will be a single doc as opposed to
   // an array. `justOne` is false by default.
-  justOne: true
+  justOne: true,
   // options: { sort: { name: -1 }, limit: 5 } // Query options, see http://bit.ly/mongoose-query-options
 });
 

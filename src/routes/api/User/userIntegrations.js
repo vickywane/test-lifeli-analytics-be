@@ -4,6 +4,7 @@ import path from "path";
 
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
+import UserEvent from "../../../models/userEvents";
 import { google } from "googleapis";
 
 const app = express.Router();
@@ -37,35 +38,36 @@ const LifeliCalendars = [
 
 const eventCategories = [
   {
+    name: "Li-Work and Business",
     category_code: "work-and-business",
   },
   {
+    name: "Li-Career-Development",
     category_code: "career-development",
   },
   {
+    name: "Li-Personal Development",
     category_code: "personal-development",
   },
   {
+    name: "Li-Spiritual",
     category_code: "spiritual",
   },
+  { name: "Li-Fitness", category_code: "fitness" },
   {
-    category_code: "fitness",
-  },
-  {
+    name: "Li-Relationship",
     category_code: "relationship",
   },
   {
+    name: "Li-Selfcare",
     category_code: "self-care",
   },
+  { name: "Li-Sleep", category_code: "sleep" },
   {
-    category_code: "sleep",
-  },
-  {
+    name: "Li-Travel",
     category_code: "travel",
   },
-  {
-    category_code: "errand",
-  },
+  { name: "Li-Errand", category_code: "errand" },
 ];
 
 const getDefaultActivityCategory = (activity_category_code) => {
@@ -107,18 +109,18 @@ app.get("/add-google-calendar", (req, res) => {
     access_type: "offline", // required to get refresh_token
     scope: scopes,
     prompt: "consent",
-    state: JSON.stringify({ userId: req.query.userId }),
+    state: JSON.stringify({
+      userId: req.query.userId,
+      timeZone: req.query.timeZone,
+    }),
   });
 
   // generates the consent link sent to and opened from the app
-
   if (req.query.code) {
     AuthClient.getToken(req.query.code).then(({ tokens }) => {
-      // console.log("ADD GOOGLE CALENDAR ENDPOINT");
 
-      const { userId } = JSON.parse(req.query.state);
+      const { userId, location, timeZone } = JSON.parse(req.query.state);
 
-      // TODO : create the calendars from here
       Integrations.findOneAndUpdate(
         { user_id: userId },
         {
@@ -133,10 +135,7 @@ app.get("/add-google-calendar", (req, res) => {
           const calendars = [];
           const calendarDetails = [];
 
-          // create's lifeli calendars on user's google calendar
-          // TODO: Find a way to get user's location && timezone
-
-          LifeliCalendars.forEach((name, index) => {
+          LifeliCalendars.forEach((name) => {
             calendars.push(
               google
                 .calendar({ version: "v3", auth: AuthClient })
@@ -145,19 +144,22 @@ app.get("/add-google-calendar", (req, res) => {
                     description: name,
                     etag: "",
                     kind: "calendar#calendar",
-                    location: "Lagos",
                     summary: name,
-                    timeZone: "Africa/Lagos",
+                    timeZone: timeZone,
                   },
                 })
                 .then((calendarResponse) => {
-                  calendarDetails.push({
-                    calendar_id: calendarResponse.data.id,
-                    title: calendarResponse.data.summary,
-                    event_category: eventCategories[index].category_code,
-                    activity_category_code: getDefaultActivityCategory(
-                      eventCategories[index].category_code
-                    ),
+                  eventCategories.forEach((category) => {
+                    if (category.name === calendarResponse.data.summary) {
+                      calendarDetails.push({
+                        calendar_id: calendarResponse.data.id,
+                        title: calendarResponse.data.summary,
+                        event_category: category.category_code,
+                        activity_category_code: getDefaultActivityCategory(
+                          category.category_code
+                        ),
+                      });
+                    }
                   });
                 })
             );
@@ -193,6 +195,57 @@ app.get("/add-google-calendar", (req, res) => {
   }
 });
 
+app.post("/update-synced-event", (req, res) => {
+  const { event } = req.body;
+  const { eventId } = req.params;
+
+  UserEvent.findById(event.event_id, (err, data) => {
+    if (err) {
+      res.status(404).send({ error: `unable to find event : ${eventId}` });
+    }
+
+    Integrations.findOne({ user_id: data.uuid }, (err, integrationData) => {
+      if (err) {
+        res
+          .status(404)
+          .send({ message: `integration : ${event.event_id} not found` });
+      }
+
+      AuthClient.setCredentials({
+        refresh_token: integrationData.google_calendar_token,
+      });
+
+      integrationData.calendar_details.forEach((integration) => {
+        if (
+          integration.event_category ===
+          event.event_category_code.toLocaleLowerCase()
+        ) {
+          google
+            .calendar({ version: "v3", auth: AuthClient })
+            .events.update({
+              calendarId: integration.calendar_id,
+              eventId: data.google_event_id,
+              requestBody: {
+                summary: event.note,
+                start: {
+                  dateTime: event.start_time,
+                },
+                end: {
+                  dateTime: event.end_time,
+                },
+              },
+            })
+            .catch((e) => res.status(500).send({ error: e }));
+        }
+      });
+    })
+      .then(() => {
+        res.status(200).send({ status: "SUCCESS" });
+      })
+      .catch((e) => res.status(500).send({ error: e }));
+  }).lean();
+});
+
 app.post("/delete-event/:integrationId", (req, res) => {
   const { integrationId } = req.params;
   const { calendarId, eventId } = req.body;
@@ -206,9 +259,6 @@ app.post("/delete-event/:integrationId", (req, res) => {
       refresh_token: data.google_calendar_token,
     });
 
-    // i might have to delete an event using the event name from here not the app
-    // first pull all events => search for the event by name
-    // delete the event using it's id
     google
       .calendar({ version: "v3", auth: AuthClient })
       .events.delete({ calendarId: calendarId, eventId: eventId })
@@ -217,7 +267,7 @@ app.post("/delete-event/:integrationId", (req, res) => {
   }).lean();
 });
 
-// i might merge this route with `get-events` route later
+// TODO: merge this route with `get-events` route later
 app.get("/get-calendars/:integrationId", (req, res) => {
   const { integrationId } = req.params;
 
@@ -305,7 +355,6 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
     });
     const event = [];
 
-    console.log(req.body, "request body");
     google
       .calendar({ version: "v3", auth: AuthClient })
       .calendarList.list()
@@ -343,9 +392,7 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
                         summary: data.activity_category,
                       },
                     })
-                    .then(() => {
-                      console.log("event created");
-                    })
+                    .then((made) => {})
                     .catch((e) => res.status(500).send(e))
                 );
               }
@@ -374,7 +421,6 @@ app.get("/get-integrations/:userId", (req, res) => {
     .lean();
 
   Integrations.findOne({ user_id: userId }, (err, data) => {
-
     if (err) {
       res.status(404).send(`no integrations for this user`);
     }
@@ -454,7 +500,7 @@ app.post("/delete-integration/:userId", (req, res) => {
     if (err) {
       res.status(500).send({ error: "unable to delete data" });
     }
-    res.status(200).send({status : "SUCCESS"})
+    res.status(200).send({ status: "SUCCESS" });
   }).lean();
 });
 

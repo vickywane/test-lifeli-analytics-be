@@ -57,6 +57,7 @@ router.post("/add-event", async (req, res) => {
     location,
     lat,
     lng,
+    google_event_id,
     alert_time_text,
     alert_time_value,
     repeat_time_text,
@@ -79,6 +80,7 @@ router.post("/add-event", async (req, res) => {
       end_time,
       hours_spent,
     },
+    google_event_id,
     alert_time: {
       text: alert_time_text,
       val: alert_time_value,
