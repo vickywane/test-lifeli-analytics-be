@@ -118,7 +118,6 @@ app.get("/add-google-calendar", (req, res) => {
   // generates the consent link sent to and opened from the app
   if (req.query.code) {
     AuthClient.getToken(req.query.code).then(({ tokens }) => {
-
       const { userId, location, timeZone } = JSON.parse(req.query.state);
 
       Integrations.findOneAndUpdate(
@@ -246,25 +245,47 @@ app.post("/update-synced-event", (req, res) => {
   }).lean();
 });
 
-app.post("/delete-event/:integrationId", (req, res) => {
-  const { integrationId } = req.params;
-  const { calendarId, eventId } = req.body;
+app.post("/delete-event/:userId/:eventId", (req, res) => {
+  const { userId, eventId } = req.params;
 
-  Integrations.findById(integrationId, (err, data) => {
-    if (err) {
-      res.status(404).send(err);
+  UserEvent.findById(eventId, (error, event) => {
+    if (error) {
+      res.status(500).send({ error: error });
     }
 
-    AuthClient.setCredentials({
-      refresh_token: data.google_calendar_token,
-    });
+    Integrations.findOne({ user_id: event.uuid }, (err, integrations) => {
+      integrations.calendar_details.forEach((integration) => {
+        if (event.event_category === integration.event_category) {
+          console.log(event);
 
-    google
-      .calendar({ version: "v3", auth: AuthClient })
-      .events.delete({ calendarId: calendarId, eventId: eventId })
-      .then((deleteResponse) => res.status(200).send(deleteResponse))
-      .catch((error) => res.status(500).send(error));
-  }).lean();
+          AuthClient.setCredentials({
+            refresh_token: integrations.google_calendar_token,
+          });
+
+          google
+            .calendar({ version: "v3", auth: AuthClient })
+            .events.delete({
+              calendarId: integration.calendar_id,
+              eventId: event.google_event_id,
+            })
+            .then((deleteResponse) =>
+              res.status(200).send({ response: deleteResponse })
+            )
+            .catch((error) => {
+              console.log(error);
+              res.status(500).send({ error: error });
+            });
+        }
+      });
+    }).lean();
+  });
+
+  // Integrations.findOne({user_id : userId}, (err, data) => {
+  //   if (err) {
+  //     res.status(404).send(err);
+  //   }
+
+  // }).lean();
 });
 
 // TODO: merge this route with `get-events` route later
