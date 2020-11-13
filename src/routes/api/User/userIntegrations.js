@@ -1,6 +1,7 @@
 require("dotenv").config();
 import express from "express";
 import path from "path";
+import moment from "moment";
 
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
@@ -24,7 +25,7 @@ const scopes = [
 ];
 
 const LifeliCalendars = [
-  "Li-Career-Development",
+  "Li-Career Development",
   "Li-Errand",
   "Li-Fitness",
   "Li-Personal Development",
@@ -33,16 +34,16 @@ const LifeliCalendars = [
   "Li-Sleep",
   "Li-Spiritual",
   "Li-Travel",
-  "Li-Work and Business",
+  "Li-Work & Business",
 ];
 
 const eventCategories = [
   {
-    name: "Li-Work and Business",
-    category_code: "work-and-business",
+    name: "Li-Work & Business",
+    category_code: "work-&-business",
   },
   {
-    name: "Li-Career-Development",
+    name: "Li-Career Development",
     category_code: "career-development",
   },
   {
@@ -72,7 +73,7 @@ const eventCategories = [
 
 const getDefaultActivityCategory = (activity_category_code) => {
   switch (activity_category_code) {
-    case "work-and-business":
+    case "work-&-business":
       return "work";
     case "career-development":
       return "educate";
@@ -256,7 +257,6 @@ app.post("/delete-event/:userId/:eventId", (req, res) => {
     Integrations.findOne({ user_id: event.uuid }, (err, integrations) => {
       integrations.calendar_details.forEach((integration) => {
         if (event.event_category === integration.event_category) {
-          console.log(event);
 
           AuthClient.setCredentials({
             refresh_token: integrations.google_calendar_token,
@@ -279,13 +279,6 @@ app.post("/delete-event/:userId/:eventId", (req, res) => {
       });
     }).lean();
   });
-
-  // Integrations.findOne({user_id : userId}, (err, data) => {
-  //   if (err) {
-  //     res.status(404).send(err);
-  //   }
-
-  // }).lean();
 });
 
 // TODO: merge this route with `get-events` route later
@@ -343,16 +336,101 @@ app.get("/get-events/:userId", (req, res) => {
                 if (LifeliCalendars.includes(eventResult.data.summary)) {
                   if (eventResult.data.items.length > 0) {
                     allEvents.push(eventResult.data.items);
+
+                    eventResult.data.items.forEach((event, index) => {
+                      if (event.recurrence) {
+                        const type = event.recurrence[0]
+                          .split("=")[1]
+                          .split(";")[0];
+
+                        const recurringEvent = {
+                          kind: event.kind,
+                          etag: event.etag,
+                          id: event.id,
+                          status: event.status,
+                          htmlLink: event.htmlLink,
+                          created: event.created,
+                          updated: event.updated,
+                          summary: event.summary,
+                          creator: event.creator,
+                          organizer: event.organizer,
+                          recurrence: event.recurrence,
+                          iCalUID: event.iCalUID,
+                          sequence: event.sequence,
+                          reminders: event.reminders,
+                        };
+
+                        // google
+                        //   .calendar({ version: "v3", auth: AuthClient })
+                        //   .events.instances({
+                        //     calendarId: calendar.id,
+                        //     eventId: event.id,
+                        //   })
+                        //   .then((result) =>
+                        //     console.log(result.data.items, "recurr")
+                        //   )
+                        //   .catch((e) => console.log(e));
+
+                        switch (type) {
+                          case "DAILY":
+                            const dates =
+                              7 - moment(event.start.dateTime).isoWeekday() + 1
+                           
+                            Array(dates)
+                              .fill(0)
+                              .forEach((_, index) => {
+                                const start = {
+                                  start: {
+                                    dateTime: moment(event.start.dateTime).add(
+                                      index + 1,
+                                      "days"
+                                    ),
+                                    timeZone: event.start.timeZone,
+                                  },
+                                };
+
+                                const end = {
+                                  end: {
+                                    dateTime: moment(event.end.dateTime).add(
+                                      index + 1,
+                                      "days"
+                                    ),
+                                    timeZone: event.start.timeZone,
+                                  },
+                                };
+
+                                const id = {
+                                  recurringEventId: `${event.id}-r${index}`,
+                                };
+
+                                allEvents.push({
+                                  ...recurringEvent,
+                                  ...start,
+                                  ...end,
+                                  ...id,
+                                });
+                              });
+
+                            break;
+                          default:
+                            break;
+                        }
+                      }
+                    });
                   }
                 }
               })
               .catch((e) => {
+                console.log(e);
                 res.status(404).send(`Error : ${e}`);
               })
           );
         });
 
-        Promise.all(events).then(() => res.status(200).send(allEvents.flat()));
+        Promise.all(events).then(() => {
+          // console.log(allEvents.flat());
+          res.status(200).send(allEvents.flat());
+        });
       })
       .catch((e) => {
         res.status(500).send(e);
@@ -400,7 +478,6 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
                         },
                         etag: "00000000000000000000",
                         kind: "calendar#event",
-                        recurringEventId: "my_recurringEventId",
                         sequence: 0,
                         source: {
                           title: "Lifeli - App",

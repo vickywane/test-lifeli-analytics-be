@@ -39,6 +39,10 @@ const userEvents = new Schema(
       val: Date,
       reoccur: String,
     },
+    recurringEventId: {
+      type: String,
+      default: null,
+    },
     activity_category: { type: String, required: true },
     event_category: { type: String, required: true },
     activity_code: { type: String, required: true },
