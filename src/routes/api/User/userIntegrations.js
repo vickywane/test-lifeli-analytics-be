@@ -226,7 +226,7 @@ app.post("/update-synced-event", (req, res) => {
               calendarId: integration.calendar_id,
               eventId: data.google_event_id,
               requestBody: {
-                summary: event.note,
+                summary: `${event.activity_code} :  ${event.note}`,
                 start: {
                   dateTime: event.start_time,
                 },
@@ -257,7 +257,6 @@ app.post("/delete-event/:userId/:eventId", (req, res) => {
     Integrations.findOne({ user_id: event.uuid }, (err, integrations) => {
       integrations.calendar_details.forEach((integration) => {
         if (event.event_category === integration.event_category) {
-
           AuthClient.setCredentials({
             refresh_token: integrations.google_calendar_token,
           });
@@ -374,8 +373,8 @@ app.get("/get-events/:userId", (req, res) => {
                         switch (type) {
                           case "DAILY":
                             const dates =
-                              7 - moment(event.start.dateTime).isoWeekday() + 1
-                           
+                              7 - moment(event.start.dateTime).isoWeekday() + 1;
+
                             Array(dates)
                               .fill(0)
                               .forEach((_, index) => {
