@@ -98,6 +98,10 @@ const getDefaultActivityCategory = (activity_category_code) => {
   }
 };
 
+const capitalizeFirstLetter = (name) => {
+  return name.charAt(0).toUpperCase() + name.slice(1);
+};
+
 // CALENDAR INTEGRATION ======================>
 
 // this route is hit twice during the integration process.
@@ -226,7 +230,9 @@ app.post("/update-synced-event", (req, res) => {
               calendarId: integration.calendar_id,
               eventId: data.google_event_id,
               requestBody: {
-                summary: `${event.activity_code} :  ${event.note}`,
+                summary: `${capitalizeFirstLetter(event.activity_code)} :  ${
+                  event.note
+                }`,
                 start: {
                   dateTime: event.start_time,
                 },
@@ -427,7 +433,6 @@ app.get("/get-events/:userId", (req, res) => {
         });
 
         Promise.all(events).then(() => {
-          // console.log(allEvents.flat());
           res.status(200).send(allEvents.flat());
         });
       })
