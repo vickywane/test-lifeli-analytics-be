@@ -58,6 +58,7 @@ router.post("/add-event", async (req, res) => {
     lat,
     lng,
     google_event_id,
+    recurringEventId, 
     alert_time_text,
     alert_time_value,
     repeat_time_text,
@@ -75,6 +76,7 @@ router.post("/add-event", async (req, res) => {
   const data = {
     uuid,
     note,
+    recurringEventId , 
     time_schedule: {
       start_time,
       end_time,

@@ -30,7 +30,7 @@ const LifeliCalendars = [
   "Li-Fitness",
   "Li-Personal Development",
   "Li-Relationship",
-  "Li-Selfcare",
+  "Li-Self Care",
   "Li-Sleep",
   "Li-Spiritual",
   "Li-Travel",
@@ -60,7 +60,7 @@ const eventCategories = [
     category_code: "relationship",
   },
   {
-    name: "Li-Selfcare",
+    name: "Li-Self Care",
     category_code: "self-care",
   },
   { name: "Li-Sleep", category_code: "sleep" },
@@ -380,7 +380,7 @@ app.get("/get-events/:userId", (req, res) => {
                           case "DAILY":
                             const dates =
                               7 - moment(event.start.dateTime).isoWeekday() + 1;
-
+                          
                             Array(dates)
                               .fill(0)
                               .forEach((_, index) => {
