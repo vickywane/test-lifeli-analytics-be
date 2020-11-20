@@ -7,6 +7,7 @@ import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
 import UserEvent from "../../../models/userEvents";
 import { google } from "googleapis";
+import { v4 as uuid } from "uuid";
 
 const app = express.Router();
 
@@ -135,7 +136,9 @@ app.get("/add-google-calendar", (req, res) => {
       )
         .lean()
         .then(() => {
-          AuthClient.setCredentials({ refresh_token: tokens.refresh_token });
+          AuthClient.setCredentials({
+            refresh_token: tokens.refresh_token,
+          });
           const calendars = [];
           const calendarDetails = [];
 
@@ -185,7 +188,6 @@ app.get("/add-google-calendar", (req, res) => {
               res.status(200).sendFile(path.join(__dirname + "/success.html"));
             })
             .catch((e) => {
-              console.log(e, "error cerating calendars");
               res.status(500).send(e);
             });
         })
@@ -203,53 +205,66 @@ app.post("/update-synced-event", (req, res) => {
   const { event } = req.body;
   const { eventId } = req.params;
 
-  UserEvent.findById(event.event_id, (err, data) => {
-    if (err) {
-      res.status(404).send({ error: `unable to find event : ${eventId}` });
-    }
-
-    Integrations.findOne({ user_id: data.uuid }, (err, integrationData) => {
+  // console.log(event.activity_code);
+  try {
+    UserEvent.findById(event.event_id, (err, data) => {
       if (err) {
-        res
-          .status(404)
-          .send({ message: `integration : ${event.event_id} not found` });
+        res.status(404).send({
+          error: `unable to find event : ${eventId}`,
+        });
       }
 
-      AuthClient.setCredentials({
-        refresh_token: integrationData.google_calendar_token,
-      });
-
-      integrationData.calendar_details.forEach((integration) => {
-        if (
-          integration.event_category ===
-          event.event_category_code.toLocaleLowerCase()
-        ) {
-          google
-            .calendar({ version: "v3", auth: AuthClient })
-            .events.update({
-              calendarId: integration.calendar_id,
-              eventId: data.google_event_id,
-              requestBody: {
-                summary: `${capitalizeFirstLetter(event.activity_code)} :  ${
-                  event.note
-                }`,
-                start: {
-                  dateTime: event.start_time,
-                },
-                end: {
-                  dateTime: event.end_time,
-                },
-              },
-            })
-            .catch((e) => res.status(500).send({ error: e }));
+      //Edge case : Changing the event category from the app breaks the event update cause it changes the event_id
+      // After that the calendarID would not match anymore
+      Integrations.findOne({ user_id: data.uuid }, (err, integrationData) => {
+        if (err) {
+          res.status(404).send({
+            message: `integration : ${event.event_id} not found`,
+          });
         }
-      });
-    })
-      .then(() => {
-        res.status(200).send({ status: "SUCCESS" });
+
+        AuthClient.setCredentials({
+          refresh_token: integrationData.google_calendar_token,
+        });
+
+        integrationData.calendar_details.forEach((integration) => {
+          if (
+            integration.event_category ===
+            event.event_category_code.toLocaleLowerCase()
+          ) {
+            google
+              .calendar({ version: "v3", auth: AuthClient })
+              .events.update({
+                calendarId: integration.calendar_id,
+                eventId: data.google_event_id,
+                requestBody: {
+                  summary: `${capitalizeFirstLetter(event.activity_code)}:  ${
+                    event.note
+                  }`,
+                  start: {
+                    dateTime: event.start_time,
+                  },
+                  end: {
+                    dateTime: event.end_time,
+                  },
+                },
+              })
+              .then(() => console.log("EVENT UPDATED NOW"))
+              .catch((e) => {
+                console.log(e);
+                res.status(500).send({ error: e });
+              });
+          }
+        });
       })
-      .catch((e) => res.status(500).send({ error: e }));
-  }).lean();
+        .then(() => {
+          res.status(200).send({ status: "SUCCESS" });
+        })
+        .catch((e) => res.status(500).send({ error: e }));
+    }).lean();
+  } catch (e) {
+    console.log(`an error : ${e}`);
+  }
 });
 
 app.post("/delete-event/:userId/:eventId", (req, res) => {
@@ -309,6 +324,7 @@ app.get("/get-calendars/:integrationId", (req, res) => {
   }).lean();
 });
 
+//TODO: Look into using generators to imporve nested parrallel promises
 app.get("/get-events/:userId", (req, res) => {
   const { userId } = req.params;
 
@@ -327,6 +343,7 @@ app.get("/get-events/:userId", (req, res) => {
       .then((calendars) => {
         const events = [];
         const allEvents = [];
+        const rEvents = [];
 
         calendars.data.items.forEach((calendar) => {
           events.push(
@@ -365,61 +382,38 @@ app.get("/get-events/:userId", (req, res) => {
                           reminders: event.reminders,
                         };
 
-                        // google
-                        //   .calendar({ version: "v3", auth: AuthClient })
-                        //   .events.instances({
-                        //     calendarId: calendar.id,
-                        //     eventId: event.id,
-                        //   })
-                        //   .then((result) =>
-                        //     console.log(result.data.items, "recurr")
-                        //   )
-                        //   .catch((e) => console.log(e));
-
-                        switch (type) {
-                          case "DAILY":
-                            const dates =
-                              7 - moment(event.start.dateTime).isoWeekday() + 1;
-                          
-                            Array(dates)
-                              .fill(0)
-                              .forEach((_, index) => {
-                                const start = {
-                                  start: {
-                                    dateTime: moment(event.start.dateTime).add(
-                                      index + 1,
+                        rEvents.push(
+                          google
+                            .calendar({ version: "v3", auth: AuthClient })
+                            .events.instances({
+                              calendarId: calendar.id,
+                              eventId: event.id,
+                            })
+                            .then((recurringEvents) => {
+                              recurringEvents.data.items.forEach(
+                                (event, index) => {
+                                  const { created, end, start } = event;
+                                  const diffFromStart =
+                                    moment(start.dateTime).diff(
+                                      moment(created),
                                       "days"
-                                    ),
-                                    timeZone: event.start.timeZone,
-                                  },
-                                };
+                                    );
+                                  const currentDayNo =
+                                    7 - moment().isoWeekday();
 
-                                const end = {
-                                  end: {
-                                    dateTime: moment(event.end.dateTime).add(
-                                      index + 1,
-                                      "days"
-                                    ),
-                                    timeZone: event.start.timeZone,
-                                  },
-                                };
-
-                                const id = {
-                                  recurringEventId: `${event.id}-r${index}`,
-                                };
-
-                                allEvents.push({
-                                  ...recurringEvent,
-                                  ...start,
-                                  ...end,
-                                  ...id,
-                                });
-                              });
-
-                            break;
-                          default:
-                            break;
-                        }
+                                  if (diffFromStart < currentDayNo) {
+                                    // first parent event has already been added to the all event array and causes a duplication on app calendar
+                                    if (index !== 0) {
+                                      allEvents.push(event);
+                                    }
+                                  } else {
+                                    return;
+                                  }
+                                }
+                              );
+                            })
+                            .catch(() => {})
+                        );
                       }
                     });
                   }
@@ -433,7 +427,9 @@ app.get("/get-events/:userId", (req, res) => {
         });
 
         Promise.all(events).then(() => {
-          res.status(200).send(allEvents.flat());
+          Promise.all(rEvents).then(() => {
+            res.status(200).send(allEvents.flat());
+          });
         });
       })
       .catch((e) => {
@@ -471,7 +467,10 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
               ) {
                 event.push(
                   google
-                    .calendar({ version: "v3", auth: AuthClient })
+                    .calendar({
+                      version: "v3",
+                      auth: AuthClient,
+                    })
                     .events.insert({
                       calendarId: calendar.id,
                       requestBody: {
