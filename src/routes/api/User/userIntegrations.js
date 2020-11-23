@@ -8,6 +8,7 @@ import user from "../../../models/user";
 import UserEvent from "../../../models/userEvents";
 import { google } from "googleapis";
 import { v4 as uuid } from "uuid";
+import userEvents from "../../../models/userEvents";
 
 const app = express.Router();
 
@@ -228,6 +229,11 @@ app.post("/update-synced-event", (req, res) => {
         });
 
         integrationData.calendar_details.forEach((integration) => {
+          console.log(
+            integration.event_category,
+            event.event_category_code.toLocaleLowerCase()
+          );
+
           if (
             integration.event_category ===
             event.event_category_code.toLocaleLowerCase()
@@ -267,6 +273,10 @@ app.post("/update-synced-event", (req, res) => {
   }
 });
 
+const formatEventCategory = (name) => {
+  return name.split(" ").join("-").toLocaleLowerCase();
+};
+
 app.post("/delete-event/:userId/:eventId", (req, res) => {
   const { userId, eventId } = req.params;
 
@@ -274,10 +284,12 @@ app.post("/delete-event/:userId/:eventId", (req, res) => {
     if (error) {
       res.status(500).send({ error: error });
     }
-
     Integrations.findOne({ user_id: event.uuid }, (err, integrations) => {
       integrations.calendar_details.forEach((integration) => {
-        if (event.event_category === integration.event_category) {
+        if (
+          formatEventCategory(event.event_category) ===
+          integration.event_category
+        ) {
           AuthClient.setCredentials({
             refresh_token: integrations.google_calendar_token,
           });
@@ -384,33 +396,40 @@ app.get("/get-events/:userId", (req, res) => {
 
                         rEvents.push(
                           google
-                            .calendar({ version: "v3", auth: AuthClient })
+                            .calendar({
+                              version: "v3",
+                              auth: AuthClient,
+                            })
                             .events.instances({
                               calendarId: calendar.id,
                               eventId: event.id,
                             })
                             .then((recurringEvents) => {
-                              recurringEvents.data.items.forEach(
-                                (event, index) => {
-                                  const { created, end, start } = event;
-                                  const diffFromStart =
-                                    moment(start.dateTime).diff(
-                                      moment(created),
-                                      "days"
-                                    );
-                                  const currentDayNo =
-                                    7 - moment().isoWeekday();
+                              const currentDayNo =
+                                7 - moment().isoWeekday() === 0
+                                  ? 7
+                                  : 7 - moment().isoWeekday();
+                              try {
+                                recurringEvents.data.items.forEach(
+                                  (event, index) => {
+                                    const { created, end, start } = event;
+                                    const diffFromStart = moment(
+                                      start.dateTime
+                                    ).diff(moment(created), "days");
 
-                                  if (diffFromStart < currentDayNo) {
-                                    // first parent event has already been added to the all event array and causes a duplication on app calendar
-                                    if (index !== 0) {
-                                      allEvents.push(event);
+                                    if (diffFromStart < currentDayNo) {
+                                      // first parent event has already been added to the all event array and causes a duplication on app calendar
+                                      if (index !== 0) {
+                                        allEvents.push(event);
+                                      }
+                                    } else {
+                                      throw new Error();
                                     }
-                                  } else {
-                                    return;
                                   }
-                                }
-                              );
+                                );
+                              } catch (e) {
+                                // breaks out
+                              }
                             })
                             .catch(() => {})
                         );
@@ -446,7 +465,7 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
     }
 
     const formattedName = (name) => {
-      return name.split(" ").join("-").toLocaleLowerCase();
+      return name.toLocaleLowerCase();
     };
 
     AuthClient.setCredentials({
@@ -474,7 +493,6 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
                     .events.insert({
                       calendarId: calendar.id,
                       requestBody: {
-                        colorId: "6",
                         description: data.event_category,
                         end: {
                           dateTime: data.time_schedule.end_time,
@@ -493,8 +511,10 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
                         summary: data.activity_category,
                       },
                     })
-                    .then((made) => {})
-                    .catch((e) => res.status(500).send(e))
+                    .then(() => {})
+                    .catch((e) => {
+                      res.status(500).send(e);
+                    })
                 );
               }
             });
