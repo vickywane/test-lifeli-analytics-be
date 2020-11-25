@@ -7,8 +7,6 @@ import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
 import UserEvent from "../../../models/userEvents";
 import { google } from "googleapis";
-import { v4 as uuid } from "uuid";
-import userEvents from "../../../models/userEvents";
 
 const app = express.Router();
 
@@ -373,27 +371,6 @@ app.get("/get-events/:userId", (req, res) => {
 
                     eventResult.data.items.forEach((event, index) => {
                       if (event.recurrence) {
-                        const type = event.recurrence[0]
-                          .split("=")[1]
-                          .split(";")[0];
-
-                        const recurringEvent = {
-                          kind: event.kind,
-                          etag: event.etag,
-                          id: event.id,
-                          status: event.status,
-                          htmlLink: event.htmlLink,
-                          created: event.created,
-                          updated: event.updated,
-                          summary: event.summary,
-                          creator: event.creator,
-                          organizer: event.organizer,
-                          recurrence: event.recurrence,
-                          iCalUID: event.iCalUID,
-                          sequence: event.sequence,
-                          reminders: event.reminders,
-                        };
-
                         rEvents.push(
                           google
                             .calendar({
@@ -457,16 +434,26 @@ app.get("/get-events/:userId", (req, res) => {
   }).lean();
 });
 
+const findSelfCare = (name) => {
+  if (name === "li-self care") {
+    return "li-selfcare";
+  } else {
+    return name;
+  }
+};
+
+const formattedName = (name) => {
+  let newName = name.split("&").join("and").toLocaleLowerCase();
+
+  return findSelfCare(newName);
+};
+
 app.post("/create-calendar-event/:integrationId", (req, res) => {
   const { integrationId } = req.params;
   Integrations.findById(integrationId, (err, data) => {
     if (err) {
       res.status(404).send(err);
     }
-
-    const formattedName = (name) => {
-      return name.toLocaleLowerCase();
-    };
 
     AuthClient.setCredentials({
       refresh_token: data.google_calendar_token,
@@ -481,7 +468,7 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
           if (LifeliCalendars.includes(calendar.summary)) {
             req.body.forEach((data) => {
               if (
-                calendar.summary.toLocaleLowerCase() ===
+                formattedName(calendar.summary) ===
                 `li-${formattedName(data.event_category)}`
               ) {
                 event.push(
@@ -511,7 +498,38 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
                         summary: data.activity_category,
                       },
                     })
-                    .then(() => {})
+                    .then((eventResult) => {
+                      UserEvent.findByIdAndUpdate(
+                        { _id: data._id },
+                        {
+                          time_schedule: {
+                            start_time: data.time_schedule.start_time,
+                            end_time: data.time_schedule.end_time,
+                            hours_spent: data.time_schedule.hours_spent,
+                          },
+                          google_event_id: eventResult.data.id,
+                          recurringEventId: data.recurringEventId,
+                          data_source: data.data_source,
+                          _id: data._id,
+                          note: data.note,
+                          location: data.location,
+                          activity_category: data.activity_category,
+                          activity_code: data.activity_code,
+                          event_category: data.event_category,
+                          event_status: data.event_status,
+                          event_type: data.event_type,
+                          event_category_code: data.event_category_code,
+                          created_on: data.created_on,
+                          __v: data.__v,
+                          id: data.id,
+                        },
+                        (err, data) => {
+                          if (err) {
+                            console.log(err);
+                          }
+                        }
+                      ).lean();
+                    })
                     .catch((e) => {
                       res.status(500).send(e);
                     })

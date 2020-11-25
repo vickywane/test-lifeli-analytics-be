@@ -68,6 +68,7 @@ router.post("/add-event", async (req, res) => {
     activity_code,
     event_category,
     event_status,
+    data_source,
     event_type,
     event_category_code,
     reminder_time,
@@ -77,6 +78,7 @@ router.post("/add-event", async (req, res) => {
     uuid,
     note,
     recurringEventId , 
+    data_source,
     time_schedule: {
       start_time,
       end_time,
