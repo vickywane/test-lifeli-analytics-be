@@ -227,11 +227,6 @@ app.post("/update-synced-event", (req, res) => {
         });
 
         integrationData.calendar_details.forEach((integration) => {
-          console.log(
-            integration.event_category,
-            event.event_category_code.toLocaleLowerCase()
-          );
-
           if (
             integration.event_category ===
             event.event_category_code.toLocaleLowerCase()
@@ -253,9 +248,9 @@ app.post("/update-synced-event", (req, res) => {
                   },
                 },
               })
-              .then(() => console.log("EVENT UPDATED NOW"))
+              .then(() => {})
               .catch((e) => {
-                console.log(e);
+                // console.log(e);
                 res.status(500).send({ error: e });
               });
           }
