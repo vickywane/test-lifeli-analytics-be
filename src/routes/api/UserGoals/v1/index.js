@@ -1,5 +1,10 @@
 import express from "express";
 import goalsModel from "../../../../models/goalsModel";
+import * as Lodash from "lodash";
+import moment from "moment";
+import { extendMoment } from "moment-range";
+
+const momentRange = extendMoment(moment);
 const router = express.Router();
 
 router.post("/create-goal", async (req, res) => {
@@ -27,13 +32,47 @@ router.post("/create-goal", async (req, res) => {
     .catch((err) => res.status(400).send({ status: "error", message: err }));
 });
 
+const isPaginatedGoal = (goal, pager) => {
+  const { week_period, created_at, event_category_code } = goal;
+
+  const goalAge = moment(moment(created_at)).diff(
+    moment(week_period.start_date),
+    "weeks"
+  );
+
+  if (goalAge < pager * 3) {
+    const weekStart =
+      pager == 1 //default
+        ? moment(new Date())
+        : moment(new Date()).subtract(Math.round((pager * 3) / 2), "weeks");
+
+    const weekEnd = moment(new Date())
+      .subtract(pager * 3, "weeks")
+      .toDate();
+
+    const weekRange = momentRange.range(weekEnd, weekStart);
+    console.log(
+      weekRange.contains(week_period.start_date),
+      "date range",
+      event_category_code,
+      goalAge
+    );
+    return weekRange.contains(week_period.start_date);
+  }
+};
+
 router.get("/fetch-all-goals", (req, res) => {
-  const { uuid } = req.query;
+  const { uuid, weekInterval } = req.query;
   goalsModel.find({ uuid }, null, { sort: { created_at: -1 } }, (err, data) => {
     if (err) {
       return res.send({ status: "error", message: "Could not find any event" });
     }
-    return res.send({ status: "success", data });
+
+    const filtered = Lodash.filter(data, (goal) =>
+      isPaginatedGoal(goal, weekInterval)
+    );
+
+    return res.send({ status: "success", data: filtered });
   });
 });
 

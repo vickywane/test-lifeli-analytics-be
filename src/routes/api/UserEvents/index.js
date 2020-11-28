@@ -6,6 +6,7 @@
 import express from "express";
 import userEvents from "../../../models/userEvents";
 import moment from "moment";
+import * as Lodash from "lodash";
 
 const router = express.Router();
 // create a new event
@@ -16,7 +17,7 @@ router.post("/add-event", async (req, res) => {
   const {
     uuid,
     note,
-    google_event_id , 
+    google_event_id,
     start_time,
     end_time,
     hours_spent,
@@ -31,7 +32,7 @@ router.post("/add-event", async (req, res) => {
     activity_category,
     activity_code,
     event_category,
-    event_category_code
+    event_category_code,
   } = req.body;
 
   const data = {
@@ -40,33 +41,36 @@ router.post("/add-event", async (req, res) => {
     time_schedule: {
       start_time,
       end_time,
-      hours_spent
+      hours_spent,
     },
     alert_time: {
       text: alert_time_text,
-      val: alert_time_value
+      val: alert_time_value,
     },
     repeat_time: {
       text: repeat_time_text,
       val: repeat_time_value,
-      reoccur: repeat_time_reoccur
+      reoccur: repeat_time_reoccur,
     },
     location,
     lat,
     lng,
     activity_category,
-    google_event_id , 
+    google_event_id,
     activity_code,
     event_category,
     event_category_code,
-    last_updated_on: new Date()
+    last_updated_on: new Date(),
   };
 
   if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
     try {
       await userEvents.create(data, (err, docs) => {
         if (err)
-          res.status(400).json({ status: "error", message: err.message });
+          res.status(400).json({
+            status: "error",
+            message: err.message,
+          });
         else {
           const {
             uuid,
@@ -80,18 +84,21 @@ router.post("/add-event", async (req, res) => {
           res.send({
             status: "success",
             data: truncatedData,
-            message: "Details added successfully"
+            message: "Details added successfully",
           });
         }
       });
       // }
     } catch (error) {
-      res.status(400).json({ status: "error", message: "Invalid details" });
+      res.status(400).json({
+        status: "error",
+        message: "Invalid details",
+      });
     }
   } else {
     return res.status(404).send({
       status: "error",
-      message: "Event end date cannot be earlier than its start date"
+      message: "Event end date cannot be earlier than its start date",
     });
   }
 });
@@ -113,10 +120,17 @@ router.post("/fetch-user-events", (req, res) => {
         res.status(404).json({
           status: "error",
           message:
-            "We couldn't fetch all of your events. But don't worry, we will try again :)"
+            "We couldn't fetch all of your events. But don't worry, we will try again :)",
         });
       } else {
-        res.send({ status: "success", data: details });
+        const filtered = Lodash.filter(
+          details,
+          ({ time_schedule }) =>
+            moment(time_schedule.start_time).diff(moment(new Date()), "weeks") <
+            3
+        );
+
+        res.send({ status: "success", data: filtered });
       }
     }
   );
@@ -164,7 +178,7 @@ router.post("/edit-event", async (req, res) => {
     activity_category,
     activity_code,
     event_category,
-    event_category_code
+    event_category_code,
   } = req.body;
   const data = {
     uuid,
@@ -172,16 +186,16 @@ router.post("/edit-event", async (req, res) => {
     time_schedule: {
       start_time,
       end_time,
-      hours_spent
+      hours_spent,
     },
     alert_time: {
       text: alert_time_text,
-      val: alert_time_value
+      val: alert_time_value,
     },
     repeat_time: {
       text: repeat_time_text,
       val: repeat_time_value,
-      reoccur: repeat_time_reoccur
+      reoccur: repeat_time_reoccur,
     },
     location,
     lat,
@@ -190,7 +204,7 @@ router.post("/edit-event", async (req, res) => {
     activity_code,
     event_category,
     event_category_code,
-    last_updated_on: new Date()
+    last_updated_on: new Date(),
   };
   if (new Date(start_time).getTime() < new Date(end_time).getTime()) {
     userEvents.findByIdAndUpdate({ _id: event_id }, data, (err, details) => {
@@ -199,14 +213,14 @@ router.post("/edit-event", async (req, res) => {
       } else {
         return res.send({
           status: "success",
-          message: "Event updated successfully"
+          message: "Event updated successfully",
         });
       }
     });
   } else {
     return res.status(404).send({
       status: "error",
-      message: "End date cannot be occur before the start date"
+      message: "End date cannot be occur before the start date",
     });
   }
 });
@@ -216,8 +230,8 @@ router.post("/search-events", (req, res) => {
   var query = {
     $or: [
       { note: { $regex: param, $options: "i" } },
-      { activity_category: { $regex: param, $options: "i" } }
-    ]
+      { activity_category: { $regex: param, $options: "i" } },
+    ],
   };
   userEvents.find(
     { uuid, ...query },

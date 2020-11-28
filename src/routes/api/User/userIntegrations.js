@@ -7,6 +7,7 @@ import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
 import UserEvent from "../../../models/userEvents";
 import { google } from "googleapis";
+import { Logger } from "mongodb";
 
 const app = express.Router();
 
@@ -110,6 +111,7 @@ const capitalizeFirstLetter = (name) => {
 
 // use route forwarding to get to this route
 app.get("/add-google-calendar", (req, res) => {
+  // Integrations.findById(req.query.use)
   const consentLink = AuthClient.generateAuthUrl({
     access_type: "offline", // required to get refresh_token
     scope: scopes,
@@ -187,6 +189,17 @@ app.get("/add-google-calendar", (req, res) => {
               res.status(200).sendFile(path.join(__dirname + "/success.html"));
             })
             .catch((e) => {
+              Integrations.findOneAndUpdate(
+                { user_id: userId },
+                {
+                  $set: {
+                    calendar_details: null,
+                    sync_status: "failure",
+                  },
+                },
+                (err, data) => {}
+              ).lean();
+
               res.status(500).send(e);
             });
         })
@@ -227,20 +240,15 @@ app.post("/update-synced-event", (req, res) => {
         });
 
         integrationData.calendar_details.forEach((integration) => {
-          console.log(
-            integration.event_category,
-            event.event_category_code.toLocaleLowerCase()
-          );
-
           if (
-            integration.event_category ===
+            formattedName(integration.event_category) ===
             event.event_category_code.toLocaleLowerCase()
           ) {
             google
               .calendar({ version: "v3", auth: AuthClient })
               .events.update({
                 calendarId: integration.calendar_id,
-                eventId: data.google_event_id,
+                eventId: event.google_event_id,
                 requestBody: {
                   summary: `${capitalizeFirstLetter(event.activity_code)}:  ${
                     event.note
@@ -253,10 +261,8 @@ app.post("/update-synced-event", (req, res) => {
                   },
                 },
               })
-              .then(() => console.log("EVENT UPDATED NOW"))
               .catch((e) => {
-                console.log(e);
-                res.status(500).send({ error: e });
+                // res.status(500).send({ error: e });
               });
           }
         });
@@ -272,67 +278,154 @@ app.post("/update-synced-event", (req, res) => {
 });
 
 const formatEventCategory = (name) => {
-  return name.split(" ").join("-").toLocaleLowerCase();
+  if (name.toLocaleLowerCase() === "selfcare") {
+    return "self-care";
+  } else {
+    return name.split(" ").join("-").toLocaleLowerCase();
+  }
 };
 
-app.post("/delete-event/:userId/:eventId", (req, res) => {
-  const { userId, eventId } = req.params;
+app.delete("/delete-synced-event/:eventId", (req, res) => {
+  const { eventId } = req.params;
 
   UserEvent.findById(eventId, (error, event) => {
     if (error) {
       res.status(500).send({ error: error });
     }
     Integrations.findOne({ user_id: event.uuid }, (err, integrations) => {
-      integrations.calendar_details.forEach((integration) => {
-        if (
-          formatEventCategory(event.event_category) ===
-          integration.event_category
-        ) {
-          AuthClient.setCredentials({
-            refresh_token: integrations.google_calendar_token,
-          });
-
-          google
-            .calendar({ version: "v3", auth: AuthClient })
-            .events.delete({
-              calendarId: integration.calendar_id,
-              eventId: event.google_event_id,
-            })
-            .then((deleteResponse) =>
-              res.status(200).send({ response: deleteResponse })
-            )
-            .catch((error) => {
-              console.log(error);
-              res.status(500).send({ error: error });
+      try {
+        integrations.calendar_details.forEach((integration) => {
+          if (
+            formatEventCategory(event.event_category) ===
+            integration.event_category
+          ) {
+            AuthClient.setCredentials({
+              refresh_token: integrations.google_calendar_token,
             });
-        }
-      });
+
+            google
+              .calendar({ version: "v3", auth: AuthClient })
+              .events.delete({
+                calendarId: integration.calendar_id,
+                eventId: event.google_event_id,
+              })
+              .then((deleteResponse) => {
+                console.log("EVENT DELETED");
+                res.status(200).send({ response: deleteResponse });
+              })
+              .catch((error) => {
+                console.log(error);
+                res.status(500).send({ error: error });
+              });
+          }
+        });
+      } catch (e) {
+        console.log(`error iterating over calendar details : ${error}`);
+        res.status(500).send({ error: error });
+      }
     }).lean();
   });
 });
 
-// TODO: merge this route with `get-events` route later
-app.get("/get-calendars/:integrationId", (req, res) => {
-  const { integrationId } = req.params;
+app.delete(
+  "/delete-recurring-events/:eventId/:type/:googleEventId",
+  (req, res) => {
+    const { eventId, type, googleEventId } = req.params;
+    UserEvent.findById(eventId, (error, event) => {
+      if (error) {
+        res.status(500).send({ error: error });
+      }
 
-  Integrations.findById(integrationId, (err, data) => {
-    if (err) {
-      res.status(404).send(err);
-    }
+      try {
+        Integrations.findOne({ user_id: event.uuid }, (err, integrations) => {
+          integrations.calendar_details.forEach((integration) => {
+            if (
+              formatEventCategory(event.event_category) ===
+              integration.event_category
+            ) {
+              AuthClient.setCredentials({
+                refresh_token: integrations.google_calendar_token,
+              });
 
-    AuthClient.setCredentials({
-      refresh_token: data.google_calendar_token,
+              if (type === "single") {
+                google
+                  .calendar({ version: "v3", auth: AuthClient })
+                  .events.update({
+                    calendarId: integration.calendar_id,
+                    eventId: googleEventId,
+                    requestBody: {
+                      status: "cancelled",
+                      start: {
+                        dateTime: event.time_schedule.start_time,
+                        timeZone: "Africa/Lagos", // TODO: "CHANGE TO LOCAL TZ"
+                      },
+                      end: {
+                        dateTime: event.time_schedule.end_time,
+                        timeZone: "Africa/Lagos",
+                      },
+                    },
+                  })
+                  .then((response) => res.status(200).send({ data: response }))
+                  .catch((e) => {
+                    console.log(e);
+                    res.status(500).send({ error: e });
+                  });
+              } else {
+                // console.log(event.recurringEventId, "r-id");
+                google
+                  .calendar({ version: "v3", auth: AuthClient })
+                  .events.update({
+                    calendarId: integration.calendar_id,
+                    eventId: googleEventId,
+                    recurringEventId: event.recurringEventId,
+                    requestBody: {
+                      status: "cancelled",
+                      // recurrence: ["RRULE:FREQ=DAILY;"],
+                      start: {
+                        dateTime: event.time_schedule.start_time,
+                        timeZone: "Africa/Lagos",
+                      },
+                      end: {
+                        dateTime: event.time_schedule.start_time,
+                        timeZone: "Africa/Lagos",
+                      },
+                    },
+                  })
+                  .then((deleteResponse) => {
+                    res.status(200).send({ response: deleteResponse });
+                  })
+                  .catch((error) => {
+                    console.log(error);
+                    res.status(500).send({ error: error });
+                  });
+              }
+            }
+          });
+        }).lean();
+      } catch (e) {
+        console.log(`error iterating over calendar details : ${error}`);
+        res.status(500).send({ error: error });
+      }
     });
+  }
+);
 
-    google
-      .calendar({ version: "v3", auth: AuthClient })
-      .calendarList.list()
-      .then((calendars) => {
-        res.status(200).send(calendars.data);
-      })
-      .catch((e) => res.status(404).send(e));
-  }).lean();
-});
+const checkExistingDuration = (allevents, startdate, enddate) => {
+  try {
+    const check = allevents.find((event) => {
+      if (event.status !== "cancelled") {
+        const startplusone = moment(startdate).add(1, "second");
+        const endminusone = moment(enddate).subtract(1, "second");
+        const range1 = moment.range(startplusone, endminusone);
+        const range2 = moment.range(event.start.dateTime, event.end.dateTime);
+        return range1.overlaps(range2);
+      }
+    });
+    return check;
+  } catch (e) {
+    console.log(e);
+  }
+};
 
 //TODO: Look into using generators to imporve nested parrallel promises
 app.get("/get-events/:userId", (req, res) => {
@@ -349,7 +442,7 @@ app.get("/get-events/:userId", (req, res) => {
 
     google
       .calendar({ version: "v3", auth: AuthClient })
-      .calendarList.list()
+      .calendarList.list({ showDeleted: false, showHidden: false })
       .then((calendars) => {
         const events = [];
         const allEvents = [];
@@ -364,13 +457,20 @@ app.get("/get-events/:userId", (req, res) => {
               })
               .then((eventResult) => {
                 // Filters out calendars not for lifeli app
-
                 if (LifeliCalendars.includes(eventResult.data.summary)) {
                   if (eventResult.data.items.length > 0) {
-                    allEvents.push(eventResult.data.items);
-
                     eventResult.data.items.forEach((event, index) => {
+                      if (index !== 0) {
+                        allEvents.push(event);
+                      }
+
+                      if (!event.recurrence && !event.recurringEventId) {
+                        allEvents.push(event);
+                      }
+
                       if (event.recurrence) {
+                        // When a single event is updated to become recurring, Google doesnt return that event with a `recurringEventId`. This hack mutates the parent event and add a `recurringEventId`.
+
                         rEvents.push(
                           google
                             .calendar({
@@ -386,29 +486,37 @@ app.get("/get-events/:userId", (req, res) => {
                                 7 - moment().isoWeekday() === 0
                                   ? 7
                                   : 7 - moment().isoWeekday();
+
                               try {
                                 recurringEvents.data.items.forEach(
-                                  (event, index) => {
-                                    const { created, end, start } = event;
-                                    const diffFromStart = moment(
-                                      start.dateTime
-                                    ).diff(moment(created), "days");
+                                  (recurringEvent) => {
+                                    const {
+                                      created,
+                                      start,
+                                      status,
+                                    } = recurringEvent;
 
-                                    if (diffFromStart < currentDayNo) {
-                                      // first parent event has already been added to the all event array and causes a duplication on app calendar
-                                      if (index !== 0) {
-                                        allEvents.push(event);
+                                    if (status !== "cancelled") {
+                                      const diffFromStart = moment(
+                                        start.dateTime
+                                      ).diff(moment(created), "days");
+
+                                      if (diffFromStart < currentDayNo) {
+                                        allEvents.push(recurringEvent);
+                                      } else {
+                                        throw new Error();
                                       }
-                                    } else {
-                                      throw new Error();
                                     }
                                   }
                                 );
                               } catch (e) {
+                                // intentionally throws an error to break out of loop and short event iterations
                                 // breaks out
                               }
                             })
-                            .catch(() => {})
+                            .catch((e) => {
+                              console.log(e);
+                            })
                         );
                       }
                     });
@@ -416,7 +524,6 @@ app.get("/get-events/:userId", (req, res) => {
                 }
               })
               .catch((e) => {
-                console.log(e);
                 res.status(404).send(`Error : ${e}`);
               })
           );
@@ -450,13 +557,13 @@ const formattedName = (name) => {
 
 app.post("/create-calendar-event/:integrationId", (req, res) => {
   const { integrationId } = req.params;
-  Integrations.findById(integrationId, (err, data) => {
+  Integrations.findById(integrationId, (err, integrationData) => {
     if (err) {
       res.status(404).send(err);
     }
 
     AuthClient.setCredentials({
-      refresh_token: data.google_calendar_token,
+      refresh_token: integrationData.google_calendar_token,
     });
     const event = [];
 
@@ -495,33 +602,16 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
                           dateTime: data.time_schedule.start_time,
                         },
                         status: data.status,
-                        summary: data.activity_category,
+                        summary: `${data.activity_category}${
+                          data.note && ":"
+                        }  ${data.note}`,
                       },
                     })
                     .then((eventResult) => {
                       UserEvent.findByIdAndUpdate(
-                        { _id: data._id },
+                        data._id,
                         {
-                          time_schedule: {
-                            start_time: data.time_schedule.start_time,
-                            end_time: data.time_schedule.end_time,
-                            hours_spent: data.time_schedule.hours_spent,
-                          },
                           google_event_id: eventResult.data.id,
-                          recurringEventId: data.recurringEventId,
-                          data_source: data.data_source,
-                          _id: data._id,
-                          note: data.note,
-                          location: data.location,
-                          activity_category: data.activity_category,
-                          activity_code: data.activity_code,
-                          event_category: data.event_category,
-                          event_status: data.event_status,
-                          event_type: data.event_type,
-                          event_category_code: data.event_category_code,
-                          created_on: data.created_on,
-                          __v: data.__v,
-                          id: data.id,
                         },
                         (err, data) => {
                           if (err) {
@@ -571,26 +661,37 @@ app.get("/get-integrations/:userId", (req, res) => {
 app.post("/add-user-integration", async (req, res) => {
   const { user_id } = req.body;
 
-  user
-    .findOne({ id: user_id })
-    .lean()
-    .then((err) => {
-      if (err) {
-        res.status(404).send(`unable to find user. Error: ${err}`);
-      }
-    })
-    .catch((e) => console.log(e));
+  // prevents a duplication of activities
+  Integrations.findById(user_id, (error, data) => {
+    if (error) {
+      res.status(422).send({ error });
+    }
 
-  const integration = new Integrations(req.body);
+    const performIntegration = async () => {
+      const integration = new Integrations(req.body);
 
-  await integration
-    .save()
-    .then((data) => {
-      res.status(200).send(data);
-    })
-    .catch((e) => {
-      res.status(422).send(`an error occured ${e}`);
-    });
+      await integration
+        .save()
+        .then((data) => {
+          res.status(200).send(data);
+        })
+        .catch((e) => {
+          res.status(422).send(`an error occured ${e}`);
+        });
+    };
+
+    if (!data) {
+      performIntegration();
+    } else if (!data.google_calendar_token) {
+      performIntegration();
+    } else if (data.sync_status === "failure") {
+      performIntegration();
+    } else {
+      res
+        .status()
+        .send({ response: `Previous complete intgeration found ${user_id} ` });
+    }
+  }).lean();
 });
 
 app.post("/update-integration/:user_id/:id", async (req, res) => {
@@ -618,7 +719,6 @@ app.post("/update-integration/:user_id/:id", async (req, res) => {
         last_synced: new Date(),
         autosync_enabled: autosync_enabled,
         device_type: device_type,
-        google_calendar_token: google_calendar_token,
         reason_for_failure: reason_for_failure,
         sync_status: sync_status,
       },

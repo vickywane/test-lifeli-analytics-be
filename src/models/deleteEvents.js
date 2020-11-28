@@ -1,12 +1,6 @@
-// user events model
-// description = The model schema for adding user events
-// author = Andrew Bamidele
-// date = 11/12/2019
+import { model, Schema } from "mongoose";
 
-import mongoose from "mongoose";
-const { Schema, model } = mongoose;
-
-const userEvents = new Schema(
+const deletedEvents = new Schema(
   {
     uuid: { type: String, ref: "User", required: true },
     name: {
@@ -69,14 +63,14 @@ const userEvents = new Schema(
   { toJSON: { virtuals: true } }
 );
 
-userEvents.virtual("_user", {
-  ref: "User", // The model to use
-  localField: "uuid", // Find people where `localField`
-  foreignField: "uuid", // is equal to `foreignField`
-  // If `justOne` is true, 'members' will be a single doc as opposed to
-  // an array. `justOne` is false by default.
-  justOne: true,
-  // options: { sort: { name: -1 }, limit: 5 } // Query options, see http://bit.ly/mongoose-query-options
-});
+// deletedEvents.virtual("_user", {
+//   ref: "User", // The model to use
+//   localField: "uuid", // Find people where `localField`
+//   foreignField: "uuid", // is equal to `foreignField`
+//   // If `justOne` is true, 'members' will be a single doc as opposed to
+//   // an array. `justOne` is false by default.
+//   justOne: true,
+//   // options: { sort: { name: -1 }, limit: 5 } // Query options, see http://bit.ly/mongoose-query-options
+// });
 
-export default model("UserEvents", userEvents, "userEvents");
+export default model("deletedEvents", deletedEvents, "DeletedEvents");
