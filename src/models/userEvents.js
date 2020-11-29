@@ -16,6 +16,10 @@ const userEvents = new Schema(
       type: String,
       default: null,
     },
+    event_url: {
+      type: String,
+      default: null,
+    },
     description: {
       type: String,
     },
