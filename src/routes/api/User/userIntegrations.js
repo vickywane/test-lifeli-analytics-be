@@ -306,29 +306,6 @@ app.post("/delete-event/:userId/:eventId", (req, res) => {
   });
 });
 
-// TODO: merge this route with `get-events` route later
-app.get("/get-calendars/:integrationId", (req, res) => {
-  const { integrationId } = req.params;
-
-  Integrations.findById(integrationId, (err, data) => {
-    if (err) {
-      res.status(404).send(err);
-    }
-
-    AuthClient.setCredentials({
-      refresh_token: data.google_calendar_token,
-    });
-
-    google
-      .calendar({ version: "v3", auth: AuthClient })
-      .calendarList.list()
-      .then((calendars) => {
-        res.status(200).send(calendars.data);
-      })
-      .catch((e) => res.status(404).send(e));
-  }).lean();
-});
-
 //TODO: Look into using generators to imporve nested parrallel promises
 app.get("/get-events/:userId", (req, res) => {
   const { userId } = req.params;
@@ -344,10 +321,11 @@ app.get("/get-events/:userId", (req, res) => {
 
     google
       .calendar({ version: "v3", auth: AuthClient })
-      .calendarList.list()
+      .calendarList.list({ showDeleted: false, showHidden: false })
       .then((calendars) => {
         const events = [];
         const allEvents = [];
+
         const rEvents = [];
 
         calendars.data.items.forEach((calendar) => {
@@ -363,7 +341,6 @@ app.get("/get-events/:userId", (req, res) => {
                 if (LifeliCalendars.includes(eventResult.data.summary)) {
                   if (eventResult.data.items.length > 0) {
                     allEvents.push(eventResult.data.items);
-
                     eventResult.data.items.forEach((event, index) => {
                       if (event.recurrence) {
                         rEvents.push(
@@ -381,6 +358,7 @@ app.get("/get-events/:userId", (req, res) => {
                                 7 - moment().isoWeekday() === 0
                                   ? 7
                                   : 7 - moment().isoWeekday();
+
                               try {
                                 recurringEvents.data.items.forEach(
                                   (event, index) => {
@@ -445,13 +423,13 @@ const formattedName = (name) => {
 
 app.post("/create-calendar-event/:integrationId", (req, res) => {
   const { integrationId } = req.params;
-  Integrations.findById(integrationId, (err, data) => {
+  Integrations.findById(integrationId, (err, integrationData) => {
     if (err) {
       res.status(404).send(err);
     }
 
     AuthClient.setCredentials({
-      refresh_token: data.google_calendar_token,
+      refresh_token: integrationData.google_calendar_token,
     });
     const event = [];
 
@@ -490,33 +468,14 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
                           dateTime: data.time_schedule.start_time,
                         },
                         status: data.status,
-                        summary: data.activity_category,
+                        summary: `${data.activity_category} : ${data.note}`,
                       },
                     })
                     .then((eventResult) => {
                       UserEvent.findByIdAndUpdate(
-                        { _id: data._id },
+                        data._id,
                         {
-                          time_schedule: {
-                            start_time: data.time_schedule.start_time,
-                            end_time: data.time_schedule.end_time,
-                            hours_spent: data.time_schedule.hours_spent,
-                          },
                           google_event_id: eventResult.data.id,
-                          recurringEventId: data.recurringEventId,
-                          data_source: data.data_source,
-                          _id: data._id,
-                          note: data.note,
-                          location: data.location,
-                          activity_category: data.activity_category,
-                          activity_code: data.activity_code,
-                          event_category: data.event_category,
-                          event_status: data.event_status,
-                          event_type: data.event_type,
-                          event_category_code: data.event_category_code,
-                          created_on: data.created_on,
-                          __v: data.__v,
-                          id: data.id,
                         },
                         (err, data) => {
                           if (err) {
