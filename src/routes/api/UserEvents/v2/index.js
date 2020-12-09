@@ -10,6 +10,7 @@ import { extendMoment } from "moment-range";
 const moment = extendMoment(Moment);
 import userEvents from "../../../../models/userEvents";
 import eventAlerts from "../../../../models/eventAlerts";
+import deleteEvents from "../../../../models/deleteEvents";
 
 const getEventsForDay = (allevents, startdate) => {
   return allevents.filter((e) =>
@@ -56,10 +57,10 @@ router.post("/add-event", async (req, res) => {
     hours_spent,
     location,
     lat,
-    event_url ,
+    event_url,
     lng,
     google_event_id,
-    recurringEventId, 
+    recurringEventId,
     alert_time_text,
     alert_time_value,
     repeat_time_text,
@@ -78,7 +79,7 @@ router.post("/add-event", async (req, res) => {
   const data = {
     uuid,
     note,
-    recurringEventId , 
+    recurringEventId,
     data_source,
     event_url,
     time_schedule: {
@@ -201,12 +202,62 @@ router.get("/fetch-events-notifications", (req, res) => {
 // Author -Andrew Bamidele
 // Date - 08/04/2020
 
-router.delete("/delete-user-event", (req, res) => {
+router.delete("/delete-user-event", async (req, res) => {
   const { uuid, event_id } = req.body;
-  userEvents.findByIdAndDelete({ _id: event_id }, (err, details) => {
+  userEvents.findByIdAndDelete({ _id: event_id }, async (err, details) => {
     if (err) {
       return res.send({ status: "error", message: err.message });
     } else {
+      const {
+        time_schedule,
+        alert_time,
+        repeat_time,
+        google_event_id,
+        event_url,
+        recurringEventId,
+        data_source,
+        uuid,
+        note,
+        location,
+        activity_category,
+        activity_code,
+        event_category,
+        event_status,
+        event_type,
+        event_category_code,
+        last_updated_on,
+        created_on,
+      } = details;
+
+      const deletedEvent = new deleteEvents({
+        time_schedule,
+        alert_time,
+        repeat_time,
+        google_event_id,
+        event_url,
+        recurringEventId,
+        data_source,
+        uuid,
+        note,
+        location,
+        activity_category,
+        activity_code,
+        event_category,
+        event_status,
+        event_type,
+        event_category_code,
+        last_updated_on,
+        created_on,
+      });
+      try {
+        await deletedEvent
+          .save()
+          .then(() => {})
+          .catch((e) => console.log(`err : ${e}`));
+      } catch (e) {
+        console.log(`Error replicating deleted event: ${e}`);
+      }
+
       eventAlerts.findOneAndDelete({ event_id: event_id }, (err, details) => {
         return res.send({ status: "success", message: "Event Removed" });
       });

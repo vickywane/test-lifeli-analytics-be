@@ -289,9 +289,18 @@ app.post("/delete-event/:userId/:eventId", (req, res) => {
 
           google
             .calendar({ version: "v3", auth: AuthClient })
-            .events.delete({
+            .events.update({
               calendarId: integration.calendar_id,
               eventId: event.google_event_id,
+              requestBody: {
+                status: "cancelled",
+                end: {
+                  dateTime: event.time_schedule.end_time,
+                },
+                start: {
+                  dateTime: event.time_schedule.start_time,
+                },
+              },
             })
             .then((deleteResponse) =>
               res.status(200).send({ response: deleteResponse })
@@ -340,8 +349,12 @@ app.get("/get-events/:userId", (req, res) => {
 
                 if (LifeliCalendars.includes(eventResult.data.summary)) {
                   if (eventResult.data.items.length > 0) {
-                    allEvents.push(eventResult.data.items);
                     eventResult.data.items.forEach((event, index) => {
+                      // filters out the parent event without a `recurringEventID`
+                      !event.recurrence &&
+                        !event.recurringEventId &&
+                        allEvents.push(event);
+
                       if (event.recurrence) {
                         rEvents.push(
                           google
@@ -360,23 +373,18 @@ app.get("/get-events/:userId", (req, res) => {
                                   : 7 - moment().isoWeekday();
 
                               try {
-                                recurringEvents.data.items.forEach(
-                                  (event, index) => {
-                                    const { created, end, start } = event;
-                                    const diffFromStart = moment(
-                                      start.dateTime
-                                    ).diff(moment(created), "days");
+                                recurringEvents.data.items.forEach((event) => {
+                                  const { created, end, start } = event;
+                                  const diffFromStart = moment(
+                                    start.dateTime
+                                  ).diff(moment(created), "days");
 
-                                    if (diffFromStart < currentDayNo) {
-                                      // first parent event has already been added to the all event array and causes a duplication on app calendar
-                                      if (index !== 0) {
-                                        allEvents.push(event);
-                                      }
-                                    } else {
-                                      throw new Error();
-                                    }
+                                  if (diffFromStart < currentDayNo) {
+                                    allEvents.push(event);
+                                  } else {
+                                    throw new Error();
                                   }
-                                );
+                                });
                               } catch (e) {
                                 // breaks out
                               }
@@ -397,6 +405,7 @@ app.get("/get-events/:userId", (req, res) => {
 
         Promise.all(events).then(() => {
           Promise.all(rEvents).then(() => {
+            // console.log(allEvents.flat());
             res.status(200).send(allEvents.flat());
           });
         });
@@ -468,7 +477,7 @@ app.post("/create-calendar-event/:integrationId", (req, res) => {
                           dateTime: data.time_schedule.start_time,
                         },
                         status: data.status,
-                        summary: `${data.activity_category} : ${data.note}`,
+                        summary: `${data.activity_category}: ${data.note}`,
                       },
                     })
                     .then((eventResult) => {
