@@ -2,6 +2,7 @@ require("dotenv").config();
 import express from "express";
 import path from "path";
 import moment from "moment";
+import { uniqBy } from "lodash";
 
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
@@ -346,16 +347,28 @@ app.get("/get-events/:userId", (req, res) => {
               })
               .then((eventResult) => {
                 // Filters out calendars not for lifeli app
+                let parentReccurring;
 
                 if (LifeliCalendars.includes(eventResult.data.summary)) {
                   if (eventResult.data.items.length > 0) {
                     eventResult.data.items.forEach((event, index) => {
+                      // find the single event that was updated recurring
+                      if (event.recurrence) {
+                        if (!event.recurringEventId) {
+                          parentReccurring = event;
+                        }
+                      }
+
                       // filters out the parent event without a `recurringEventID`
-                      !event.recurrence &&
-                        !event.recurringEventId &&
+                      event.recurrence &&
+                        event.recurringEventId &&
                         allEvents.push(event);
 
+                      !event.recurrence && allEvents.push(event);
+
                       if (event.recurrence) {
+                        // When a single event is updated to become recurring, Google doesnt return that event with a `recurringEventId`. This hack mutates the parent event and add a `recurringEventId`.
+
                         rEvents.push(
                           google
                             .calendar({
@@ -373,18 +386,78 @@ app.get("/get-events/:userId", (req, res) => {
                                   : 7 - moment().isoWeekday();
 
                               try {
-                                recurringEvents.data.items.forEach((event) => {
-                                  const { created, end, start } = event;
-                                  const diffFromStart = moment(
-                                    start.dateTime
-                                  ).diff(moment(created), "days");
+                                recurringEvents.data.items.forEach(
+                                  (recurringEvent, index) => {
+                                    const {
+                                      created,
+                                      start,
+                                      status,
+                                    } = recurringEvent;
 
-                                  if (diffFromStart < currentDayNo) {
-                                    allEvents.push(event);
-                                  } else {
-                                    throw new Error();
+                                    if (status !== "cancelled") {
+                                      const diffFromStart = moment(
+                                        start.dateTime
+                                      ).diff(moment(created), "days");
+
+                                      if (diffFromStart < currentDayNo) {
+                                        if (index !== 0) {
+                                          allEvents.push(recurringEvent);
+                                        }
+
+                                        if (!event.recurringEventId) {
+                                          if (index === 0) {
+                                            // spreading event in overwrites the previous event ID
+
+                                            parentReccurring = {
+                                              ...{
+                                                recurrence:
+                                                  parentReccurring.recurrence,
+                                                recurringEventId: event.id,
+                                              },
+                                            };
+
+                                            parentReccurring.iCalUID =
+                                              recurringEvent.iCalUID;
+                                            parentReccurring.etag =
+                                              recurringEvent.etag;
+                                            parentReccurring.end =
+                                              recurringEvent.end;
+                                            parentReccurring.start =
+                                              recurringEvent.start;
+                                            // parentReccurring.recurrence = event.recurrence;
+                                            parentReccurring.reminders =
+                                              recurringEvent.reminders;
+                                            parentReccurring.organizer =
+                                              recurringEvent.organizer;
+                                            parentReccurring.kind =
+                                              recurringEvent.kind;
+                                            parentReccurring.status =
+                                              recurringEvent.status;
+                                            parentReccurring.htmlLink =
+                                              recurringEvent.htmlLink;
+                                            parentReccurring.created =
+                                              recurringEvent.created;
+                                            parentReccurring.reminders =
+                                              recurringEvent.reminders;
+                                            parentReccurring.sequence =
+                                              event.sequence;
+                                            parentReccurring.summary =
+                                              event.summary;
+                                            parentReccurring.creator =
+                                              recurringEvent.creator;
+                                            // // parentRecurringEvent's Id is same as recurringEventId
+                                            parentReccurring.id =
+                                              recurringEvent.recurringEventId;
+
+                                            allEvents.push(parentReccurring);
+                                          }
+                                        }
+                                      } else {
+                                        throw new Error();
+                                      }
+                                    }
                                   }
-                                });
+                                );
                               } catch (e) {
                                 // breaks out
                               }
@@ -405,7 +478,9 @@ app.get("/get-events/:userId", (req, res) => {
 
         Promise.all(events).then(() => {
           Promise.all(rEvents).then(() => {
+            //   console.log(uniqBy(allEvents.flat(), "id"));
             // console.log(allEvents.flat());
+            //  console.log(allEvents.flat());
             res.status(200).send(allEvents.flat());
           });
         });
@@ -581,7 +656,6 @@ app.post("/update-integration/:user_id/:id", async (req, res) => {
         last_synced: new Date(),
         autosync_enabled: autosync_enabled,
         device_type: device_type,
-        google_calendar_token: google_calendar_token,
         reason_for_failure: reason_for_failure,
         sync_status: sync_status,
       },
