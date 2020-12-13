@@ -2,7 +2,6 @@ require("dotenv").config();
 import express from "express";
 import path from "path";
 import moment from "moment";
-import { uniqBy } from "lodash";
 
 import Integrations from "../../../models/integrations";
 import user from "../../../models/user";
@@ -188,6 +187,17 @@ app.get("/add-google-calendar", (req, res) => {
               res.status(200).sendFile(path.join(__dirname + "/success.html"));
             })
             .catch((e) => {
+              Integrations.findOneAndUpdate(
+                { user_id: userId },
+                {
+                  $set: {
+                    calendar_details: null,
+                    sync_status: "failure",
+                  },
+                },
+                (err, data) => {}
+              ).lean();
+
               res.status(500).send(e);
             });
         })
@@ -229,7 +239,7 @@ app.post("/update-synced-event", (req, res) => {
 
         integrationData.calendar_details.forEach((integration) => {
           if (
-            integration.event_category ===
+            formattedName(integration.event_category) ===
             event.event_category_code.toLocaleLowerCase()
           ) {
             google
@@ -249,9 +259,7 @@ app.post("/update-synced-event", (req, res) => {
                   },
                 },
               })
-              .then(() => {})
               .catch((e) => {
-                // console.log(e);
                 res.status(500).send({ error: e });
               });
           }
@@ -279,39 +287,44 @@ app.post("/delete-event/:userId/:eventId", (req, res) => {
       res.status(500).send({ error: error });
     }
     Integrations.findOne({ user_id: event.uuid }, (err, integrations) => {
-      integrations.calendar_details.forEach((integration) => {
-        if (
-          formatEventCategory(event.event_category) ===
-          integration.event_category
-        ) {
-          AuthClient.setCredentials({
-            refresh_token: integrations.google_calendar_token,
-          });
-
-          google
-            .calendar({ version: "v3", auth: AuthClient })
-            .events.update({
-              calendarId: integration.calendar_id,
-              eventId: event.google_event_id,
-              requestBody: {
-                status: "cancelled",
-                end: {
-                  dateTime: event.time_schedule.end_time,
-                },
-                start: {
-                  dateTime: event.time_schedule.start_time,
-                },
-              },
-            })
-            .then((deleteResponse) =>
-              res.status(200).send({ response: deleteResponse })
-            )
-            .catch((error) => {
-              console.log(error);
-              res.status(500).send({ error: error });
+      try {
+        integrations.calendar_details.forEach((integration) => {
+          if (
+            formatEventCategory(event.event_category) ===
+            integration.event_category
+          ) {
+            AuthClient.setCredentials({
+              refresh_token: integrations.google_calendar_token,
             });
-        }
-      });
+
+            google
+              .calendar({ version: "v3", auth: AuthClient })
+              .events.update({
+                calendarId: integration.calendar_id,
+                eventId: event.google_event_id,
+                requestBody: {
+                  status: "cancelled",
+                  end: {
+                    dateTime: event.time_schedule.end_time,
+                  },
+                  start: {
+                    dateTime: event.time_schedule.start_time,
+                  },
+                },
+              })
+              .then((deleteResponse) =>
+                res.status(200).send({ response: deleteResponse })
+              )
+              .catch((error) => {
+                console.log(error);
+                res.status(500).send({ error: error });
+              });
+          }
+        });
+      } catch (e) {
+        console.log(`error iterating over calendar details : ${error}`);
+        res.status(500).send({ error: error });
+      }
     }).lean();
   });
 });
@@ -478,9 +491,6 @@ app.get("/get-events/:userId", (req, res) => {
 
         Promise.all(events).then(() => {
           Promise.all(rEvents).then(() => {
-            //   console.log(uniqBy(allEvents.flat(), "id"));
-            // console.log(allEvents.flat());
-            //  console.log(allEvents.flat());
             res.status(200).send(allEvents.flat());
           });
         });
