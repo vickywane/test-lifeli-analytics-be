@@ -279,8 +279,8 @@ const formatEventCategory = (name) => {
   return name.split(" ").join("-").toLocaleLowerCase();
 };
 
-app.post("/delete-event/:userId/:eventId", (req, res) => {
-  const { userId, eventId } = req.params;
+app.delete("/delete-event/:userId/:eventId/:deleteType", (req, res) => {
+  const { userId, eventId, deleteType } = req.params;
 
   UserEvent.findById(eventId, (error, event) => {
     if (error) {
@@ -297,28 +297,44 @@ app.post("/delete-event/:userId/:eventId", (req, res) => {
               refresh_token: integrations.google_calendar_token,
             });
 
-            google
-              .calendar({ version: "v3", auth: AuthClient })
-              .events.update({
-                calendarId: integration.calendar_id,
-                eventId: event.google_event_id,
-                requestBody: {
-                  status: "cancelled",
-                  end: {
-                    dateTime: event.time_schedule.end_time,
+            if (deleteType === "SINGLE") {
+              google
+                .calendar({ version: "v3", auth: AuthClient })
+                .events.delete({
+                  calendarId: integration.calendar_id,
+                  eventId: event.google_event_id,
+                })
+                .then((deleteResponse) =>
+                  res.status(200).send({ response: deleteResponse })
+                )
+                .catch((error) => {
+                  console.log(error);
+                  res.status(500).send({ error: error });
+                });
+            } else {
+              google
+                .calendar({ version: "v3", auth: AuthClient })
+                .events.update({
+                  calendarId: integration.calendar_id,
+                  eventId: event.google_event_id,
+                  requestBody: {
+                    status: "cancelled",
+                    end: {
+                      dateTime: event.time_schedule.end_time,
+                    },
+                    start: {
+                      dateTime: event.time_schedule.start_time,
+                    },
                   },
-                  start: {
-                    dateTime: event.time_schedule.start_time,
-                  },
-                },
-              })
-              .then((deleteResponse) =>
-                res.status(200).send({ response: deleteResponse })
-              )
-              .catch((error) => {
-                console.log(error);
-                res.status(500).send({ error: error });
-              });
+                })
+                .then((deleteResponse) =>
+                  res.status(200).send({ response: deleteResponse })
+                )
+                .catch((error) => {
+                  console.log(error);
+                  res.status(500).send({ error: error });
+                });
+            }
           }
         });
       } catch (e) {
@@ -483,7 +499,6 @@ app.get("/get-events/:userId", (req, res) => {
                 }
               })
               .catch((e) => {
-                console.log(e);
                 res.status(404).send(`Error : ${e}`);
               })
           );
