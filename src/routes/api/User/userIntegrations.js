@@ -244,91 +244,26 @@ app.post("/update-synced-event", (req, res) => {
             formattedName(integration.event_category) ===
             event.event_category_code.toLocaleLowerCase()
           ) {
-            if (event.recurringEventId) {
-              google
-                .calendar({ version: "v3", auth: AuthClient })
-                .events.instances({
-                  calendarId: integration.calendar_id,
-                  eventId: event.google_event_id,
-                })
-                .then((recurring) => {
-                  recurring.data.items.forEach(({ id }, index) => {
-                    // only matches the parent recurring event which we patching for.
-
-                    if (event.google_event_id === data.recurringEventId) {
-                      if (index === 0) {
-                        console.log("UPDATE FIRST EVENT");
-                        google
-                          .calendar({ version: "v3", auth: AuthClient })
-                          .events.update({
-                            calendarId: integration.calendar_id,
-                            eventId: id,
-                            requestBody: {
-                              summary: `${capitalizeFirstLetter(
-                                event.activity_code
-                              )}:  ${event.note}`,
-                              start: {
-                                dateTime: event.start_time,
-                                timeZone: "Africa/Lagos",
-                              },
-                              end: {
-                                dateTime: event.end_time,
-                                timeZone: "Africa/Lagos",
-                              },
-                            },
-                          })
-                          .catch((e) => {
-                            // res.status(500).send({ error: e });
-                          });
-                      }
-                    } else if (id === event.google_event_id && index !== 0) {
-                      google
-                        .calendar({ version: "v3", auth: AuthClient })
-                        .events.update({
-                          calendarId: integration.calendar_id,
-                          eventId: id,
-                          requestBody: {
-                            summary: `${capitalizeFirstLetter(
-                              event.activity_code
-                            )}:  ${event.note}`,
-                            start: {
-                              dateTime: event.start_time,
-                              timeZone: "Africa/Lagos",
-                            },
-                            end: {
-                              dateTime: event.end_time,
-                              timeZone: "Africa/Lagos",
-                            },
-                          },
-                        })
-                        .catch((e) => {
-                          // res.status(500).send({ error: e });
-                        });
-                    }
-                  });
-                });
-            } else {
-              google
-                .calendar({ version: "v3", auth: AuthClient })
-                .events.update({
-                  calendarId: integration.calendar_id,
-                  eventId: data.google_event_id,
-                  requestBody: {
-                    summary: `${capitalizeFirstLetter(event.activity_code)}:  ${
-                      event.note
-                    }`,
-                    start: {
-                      dateTime: event.start_time,
-                    },
-                    end: {
-                      dateTime: event.end_time,
-                    },
+            google
+              .calendar({ version: "v3", auth: AuthClient })
+              .events.update({
+                calendarId: integration.calendar_id,
+                eventId: event.google_event_id,
+                requestBody: {
+                  summary: `${capitalizeFirstLetter(event.activity_code)}:  ${
+                    event.note
+                  }`,
+                  start: {
+                    dateTime: event.start_time,
                   },
-                })
-                .catch((e) => {
-                  // res.status(500).send({ error: e });
-                });
-            }
+                  end: {
+                    dateTime: event.end_time,
+                  },
+                },
+              })
+              .catch((e) => {
+                // res.status(500).send({ error: e });
+              });
           }
         });
       })
@@ -343,7 +278,11 @@ app.post("/update-synced-event", (req, res) => {
 });
 
 const formatEventCategory = (name) => {
-  return name.split(" ").join("-").toLocaleLowerCase();
+  if (name.toLocaleLowerCase() === "selfcare") {
+    return "self-care";
+  } else {
+    return name.split(" ").join("-").toLocaleLowerCase();
+  }
 };
 
 app.delete("/delete-synced-event/:eventId", (req, res) => {
@@ -411,75 +350,25 @@ app.delete(
               if (type === "single") {
                 google
                   .calendar({ version: "v3", auth: AuthClient })
-                  .events.instances({
+                  .events.update({
                     calendarId: integration.calendar_id,
-                    eventId: event.google_event_id,
+                    eventId: googleEventId,
+                    requestBody: {
+                      status: "cancelled",
+                      start: {
+                        dateTime: event.time_schedule.start_time,
+                        timeZone: "Africa/Lagos", // TODO: "CHANGE TO LOCAL TZ"
+                      },
+                      end: {
+                        dateTime: event.time_schedule.end_time,
+                        timeZone: "Africa/Lagos",
+                      },
+                    },
                   })
-                  .then((recurring) => {
-                    recurring.data.items.forEach(
-                      ({ id, start, end }, index) => {
-                        const strippedRecurringId = id.split("_")[0];
-
-                        if (
-                          index === 0 &&
-                          googleEventId === strippedRecurringId
-                        ) {
-                          google
-                            .calendar({ version: "v3", auth: AuthClient })
-                            .events.update({
-                              calendarId: integration.calendar_id,
-                              eventId: id,
-                              requestBody: {
-                                status: "cancelled",
-                                start: {
-                                  dateTime: start.dateTime,
-                                  timeZone: "Africa/Lagos",
-                                },
-                                end: {
-                                  dateTime: end.dateTime,
-                                  timeZone: "Africa/Lagos",
-                                },
-                              },
-                            })
-                            .then((deleteResponse) => {
-                              res
-                                .status(200)
-                                .send({ response: deleteResponse });
-                            })
-                            .catch((e) => {
-                              console.log(`error deleting first event : ${e}`);
-
-                              // res.status(500).send({ error: e });
-                            });
-                        } else if (googleEventId === id && index !== 0) {
-                          google
-                            .calendar({ version: "v3", auth: AuthClient })
-                            .events.update({
-                              calendarId: integration.calendar_id,
-                              eventId: id,
-                              requestBody: {
-                                status: "cancelled",
-                                start: {
-                                  dateTime: start.dateTime,
-                                  timeZone: "Africa/Lagos",
-                                },
-                                end: {
-                                  dateTime: end.dateTime,
-                                  timeZone: "Africa/Lagos",
-                                },
-                              },
-                            })
-                            .then((deleteResponse) => {
-                              res
-                                .status(200)
-                                .send({ response: deleteResponse });
-                            })
-                            .catch((e) => {
-                              res.status(500).send({ error: e });
-                            });
-                        }
-                      }
-                    );
+                  .then((response) => res.status(200).send({ data: response }))
+                  .catch((e) => {
+                    console.log(e);
+                    res.status(500).send({ error: e });
                   });
               } else {
                 google
@@ -520,6 +409,23 @@ app.delete(
   }
 );
 
+const checkExistingDuration = (allevents, startdate, enddate) => {
+  try {
+    const check = allevents.find((event) => {
+      if (event.status !== "cancelled") {
+        const startplusone = moment(startdate).add(1, "second");
+        const endminusone = moment(enddate).subtract(1, "second");
+        const range1 = moment.range(startplusone, endminusone);
+        const range2 = moment.range(event.start.dateTime, event.end.dateTime);
+        return range1.overlaps(range2);
+      }
+    });
+    return check;
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 //TODO: Look into using generators to imporve nested parrallel promises
 app.get("/get-events/:userId", (req, res) => {
   const { userId } = req.params;
@@ -541,6 +447,7 @@ app.get("/get-events/:userId", (req, res) => {
         const allEvents = [];
 
         const rEvents = [];
+        const result = [];
 
         calendars.data.items.forEach((calendar) => {
           events.push(
@@ -551,25 +458,16 @@ app.get("/get-events/:userId", (req, res) => {
               })
               .then((eventResult) => {
                 // Filters out calendars not for lifeli app
-                let parentReccurring;
-
                 if (LifeliCalendars.includes(eventResult.data.summary)) {
                   if (eventResult.data.items.length > 0) {
                     eventResult.data.items.forEach((event, index) => {
-                      // find the single event that was updated recurring
-                      if (event.recurrence) {
-                        if (!event.recurringEventId) {
-                          parentReccurring = event;
-                        }
+                      if (index !== 0) {
+                        allEvents.push(event);
                       }
 
-                      event.recurrence &&
-                        event.recurringEventId &&
+                      if (!event.recurrence && !event.recurringEventId) {
                         allEvents.push(event);
-
-                      !event.recurrence &&
-                        !event.recurringEventId &&
-                        allEvents.push(event);
+                      }
 
                       if (event.recurrence) {
                         // When a single event is updated to become recurring, Google doesnt return that event with a `recurringEventId`. This hack mutates the parent event and add a `recurringEventId`.
@@ -592,12 +490,14 @@ app.get("/get-events/:userId", (req, res) => {
 
                               try {
                                 recurringEvents.data.items.forEach(
-                                  (recurringEvent, index) => {
+                                  (recurringEvent) => {
                                     const {
                                       created,
                                       start,
+                                      end,
                                       status,
                                       summary,
+                                      id,
                                     } = recurringEvent;
 
                                     if (status !== "cancelled") {
@@ -606,55 +506,37 @@ app.get("/get-events/:userId", (req, res) => {
                                       ).diff(moment(created), "days");
 
                                       if (diffFromStart < currentDayNo) {
-                                        if (index !== 0) {
-                                          allEvents.push(recurringEvent);
-                                        }
+                                        const eventExists = checkExistingDuration(
+                                          allEvents,
+                                          start.dateTime,
+                                          end.dateTime
+                                        );
 
-                                        if (!event.recurringEventId) {
-                                          if (index === 0) {
-                                            // spreading event in overwrites the previous event ID
-
-                                            parentReccurring = {
-                                              ...{
-                                                recurrence:
-                                                  parentReccurring.recurrence,
-                                                recurringEventId: event.id,
-                                              },
-                                            };
-                                            parentReccurring.iCalUID =
-                                              recurringEvent.iCalUID;
-                                            parentReccurring.etag =
-                                              recurringEvent.etag;
-                                            parentReccurring.end =
-                                              recurringEvent.end;
-                                            parentReccurring.start =
-                                              recurringEvent.start;
-                                            // parentReccurring.recurrence = event.recurrence;
-                                            parentReccurring.reminders =
-                                              recurringEvent.reminders;
-                                            parentReccurring.organizer =
-                                              recurringEvent.organizer;
-                                            parentReccurring.kind =
-                                              recurringEvent.kind;
-                                            parentReccurring.status =
-                                              recurringEvent.status;
-                                            parentReccurring.htmlLink =
-                                              recurringEvent.htmlLink;
-                                            parentReccurring.created =
-                                              recurringEvent.created;
-                                            parentReccurring.reminders =
-                                              recurringEvent.reminders;
-                                            parentReccurring.sequence =
-                                              event.sequence;
-                                            parentReccurring.summary =
-                                              event.summary;
-                                            parentReccurring.creator =
-                                              recurringEvent.creator;
-                                            // parentRecurringEvent's Id is same as recurringEventId
-                                            parentReccurring.id =
-                                              recurringEvent.recurringEventId;
-                                            allEvents.push(parentReccurring);
-                                          }
+                                        if (!eventExists) {
+                                          result.push(
+                                            google
+                                              .calendar({
+                                                version: "v3",
+                                                auth: AuthClient,
+                                              })
+                                              .events.update({
+                                                calendarId: calendar.id,
+                                                eventId: id,
+                                                requestBody: {
+                                                  summary,
+                                                  start,
+                                                  end,
+                                                },
+                                              })
+                                              .then((updatedEvents) => {
+                                                allEvents.push(
+                                                  updatedEvents.data
+                                                );
+                                              })
+                                              .catch((error) =>
+                                                res.status(500).send({ error })
+                                              )
+                                          );
                                         }
                                       } else {
                                         throw new Error();
@@ -684,11 +566,9 @@ app.get("/get-events/:userId", (req, res) => {
 
         Promise.all(events).then(() => {
           Promise.all(rEvents).then(() => {
-            // allEvents.flat().forEach((event) => {
-            //   console.log(event.summary, event.id);
-            // });
-
-            res.status(200).send(allEvents.flat());
+            Promise.all(result).then(() => {
+              res.status(200).send(allEvents.flat());
+            });
           });
         });
       })
