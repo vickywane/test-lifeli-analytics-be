@@ -371,15 +371,16 @@ app.delete(
                     res.status(500).send({ error: e });
                   });
               } else {
+                // console.log(event.recurringEventId, "r-id");
                 google
                   .calendar({ version: "v3", auth: AuthClient })
                   .events.update({
                     calendarId: integration.calendar_id,
-                    eventId: event.google_event_id,
+                    eventId: googleEventId,
                     recurringEventId: event.recurringEventId,
                     requestBody: {
                       status: "cancelled",
-                      recurrence: ["RRULE:FREQ=DAILY;"],
+                      // recurrence: ["RRULE:FREQ=DAILY;"],
                       start: {
                         dateTime: event.time_schedule.start_time,
                         timeZone: "Africa/Lagos",
@@ -445,9 +446,7 @@ app.get("/get-events/:userId", (req, res) => {
       .then((calendars) => {
         const events = [];
         const allEvents = [];
-
         const rEvents = [];
-        const result = [];
 
         calendars.data.items.forEach((calendar) => {
           events.push(
@@ -494,10 +493,7 @@ app.get("/get-events/:userId", (req, res) => {
                                     const {
                                       created,
                                       start,
-                                      end,
                                       status,
-                                      summary,
-                                      id,
                                     } = recurringEvent;
 
                                     if (status !== "cancelled") {
@@ -506,38 +502,7 @@ app.get("/get-events/:userId", (req, res) => {
                                       ).diff(moment(created), "days");
 
                                       if (diffFromStart < currentDayNo) {
-                                        const eventExists = checkExistingDuration(
-                                          allEvents,
-                                          start.dateTime,
-                                          end.dateTime
-                                        );
-
-                                        if (!eventExists) {
-                                          result.push(
-                                            google
-                                              .calendar({
-                                                version: "v3",
-                                                auth: AuthClient,
-                                              })
-                                              .events.update({
-                                                calendarId: calendar.id,
-                                                eventId: id,
-                                                requestBody: {
-                                                  summary,
-                                                  start,
-                                                  end,
-                                                },
-                                              })
-                                              .then((updatedEvents) => {
-                                                allEvents.push(
-                                                  updatedEvents.data
-                                                );
-                                              })
-                                              .catch((error) =>
-                                                res.status(500).send({ error })
-                                              )
-                                          );
-                                        }
+                                        allEvents.push(recurringEvent);
                                       } else {
                                         throw new Error();
                                       }
@@ -566,9 +531,7 @@ app.get("/get-events/:userId", (req, res) => {
 
         Promise.all(events).then(() => {
           Promise.all(rEvents).then(() => {
-            Promise.all(result).then(() => {
-              res.status(200).send(allEvents.flat());
-            });
+            res.status(200).send(allEvents.flat());
           });
         });
       })
