@@ -410,23 +410,6 @@ app.delete(
   }
 );
 
-const checkExistingDuration = (allevents, startdate, enddate) => {
-  try {
-    const check = allevents.find((event) => {
-      if (event.status !== "cancelled") {
-        const startplusone = moment(startdate).add(1, "second");
-        const endminusone = moment(enddate).subtract(1, "second");
-        const range1 = moment.range(startplusone, endminusone);
-        const range2 = moment.range(event.start.dateTime, event.end.dateTime);
-        return range1.overlaps(range2);
-      }
-    });
-    return check;
-  } catch (e) {
-    console.log(e);
-  }
-};
-
 //TODO: Look into using generators to imporve nested parrallel promises
 app.get("/get-events/:userId", (req, res) => {
   const { userId } = req.params;
@@ -501,7 +484,7 @@ app.get("/get-events/:userId", (req, res) => {
                                         start.dateTime
                                       ).diff(moment(created), "days");
 
-                                      if (diffFromStart < currentDayNo) {
+                                      if (diffFromStart <= currentDayNo) {
                                         allEvents.push(recurringEvent);
                                       } else {
                                         throw new Error();
